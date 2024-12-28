@@ -27,6 +27,9 @@ class ProfitCalculatorViewSet(ViewSet):
             contract_value = serializer.validated_data.get('contract_value', 0)
             sales_value = serializer.validated_data.get('sales_value', 0)
             import_value = serializer.validated_data.get('import_value', 0)
+            export_value = serializer.validated_data.get('export_value', 0)  # مقدار صادرات
+            raw_material_import_value = serializer.validated_data.get('raw_material_import_value', 0)  # واردات مواد اولیه
+            equipment_import_value = serializer.validated_data.get('equipment_import_value', 0)  # واردات تجهیزات
             delay_days = serializer.validated_data.get('delay_days', 0)
             rent_income = serializer.validated_data.get('rent_income', 0)
             transfer_value = serializer.validated_data.get('transfer_value', 0)
@@ -52,6 +55,12 @@ class ProfitCalculatorViewSet(ViewSet):
                 response_data['vat_sales'] = self.calculate_vat_sales(sales_value)
             if import_value > 0:
                 response_data['vat_import'] = self.calculate_vat_import(import_value)
+            if raw_material_import_value > 0:
+                response_data['raw_material_import_tax'] = self.calculate_raw_material_import_tax(raw_material_import_value)
+            if equipment_import_value > 0:
+                response_data['equipment_import_tax'] = self.calculate_equipment_import_tax(equipment_import_value)
+            if export_value > 0:
+                response_data['export_tax'] = self.calculate_export_tax(export_value)
             if delay_days > 0:
                 response_data['vat_delay_penalty'] = self.calculate_vat_delay_penalty(delay_days)
             if rent_income > 0:
@@ -64,6 +73,7 @@ class ProfitCalculatorViewSet(ViewSet):
                 heir_share = self.calculate_heir_share(inheritance_value, heir_share_percentage)
                 response_data['heir_share'] = heir_share
                 response_data['inheritance_tax'] = self.calculate_inheritance_tax(heir_share)
+
 
 
 
@@ -142,9 +152,9 @@ class ProfitCalculatorViewSet(ViewSet):
 
     # محاسبه مالیات بر ارث
     def calculate_inheritance_tax(self, heir_share):
-        real_estate_tax_rate = 0.05  # نرخ مالیات املاک
-        bank_deposit_tax_rate = 0.03  # نرخ مالیات سپرده‌های بانکی
-        securities_tax_rate = 0.02  # نرخ مالیات اوراق بهادار
+        real_estate_tax_rate = 0.05  
+        bank_deposit_tax_rate = 0.03 
+        securities_tax_rate = 0.02 
 
         real_estate_tax = heir_share * real_estate_tax_rate
         bank_deposit_tax = heir_share * bank_deposit_tax_rate
@@ -155,5 +165,25 @@ class ProfitCalculatorViewSet(ViewSet):
             'bank_deposit_tax': bank_deposit_tax,
             'securities_tax': securities_tax
         }
+    
+    # مالیات گمرکی
+    def calculate_customs_tax(self, import_value):
+        customs_tax_rate = 0.05  # نرخ مالیات گمرکی
+        return import_value * customs_tax_rate
+
+    # مالیات بر واردات مواد اولیه
+    def calculate_raw_material_import_tax(self, raw_material_import_value):
+        raw_material_tax_rate = 0.08  # نرخ مالیات واردات مواد اولیه
+        return raw_material_import_value * raw_material_tax_rate
+
+    # مالیات بر واردات تجهیزات
+    def calculate_equipment_import_tax(self, equipment_import_value):
+        equipment_tax_rate = 0.10  # نرخ مالیات واردات تجهیزات
+        return equipment_import_value * equipment_tax_rate
+
+    # مالیات صادرات
+    def calculate_export_tax(self, export_value):
+        export_tax_rate = 0.04  # نرخ مالیات صادرات
+        return export_value * export_tax_rate
     
     
