@@ -28,6 +28,14 @@ class ProfitCalculatorViewSet(ViewSet):
             sales_value = serializer.validated_data.get('sales_value', 0)
             import_value = serializer.validated_data.get('import_value', 0)
             delay_days = serializer.validated_data.get('delay_days', 0)
+            rent_income = serializer.validated_data.get('rent_income', 0)
+            transfer_value = serializer.validated_data.get('transfer_value', 0)
+            construction_sale_value = serializer.validated_data.get('construction_sale_value', 0)
+            inheritance_value = serializer.validated_data.get('inheritance_value', 0)
+            heir_share_percentage = serializer.validated_data.get('heir_share_percentage', 0)
+
+
+            
 
             response_data = {}
             if salary > 0:
@@ -46,6 +54,18 @@ class ProfitCalculatorViewSet(ViewSet):
                 response_data['vat_import'] = self.calculate_vat_import(import_value)
             if delay_days > 0:
                 response_data['vat_delay_penalty'] = self.calculate_vat_delay_penalty(delay_days)
+            if rent_income > 0:
+                response_data['property_rent_tax'] = self.calculate_property_rent_tax(rent_income)
+            if transfer_value > 0:
+                response_data['property_transfer_tax'] = self.calculate_property_transfer_tax(transfer_value)
+            if construction_sale_value > 0:
+                response_data['property_construction_sale_tax'] = self.calculate_property_construction_sale_tax(construction_sale_value)
+            if inheritance_value > 0 and heir_share_percentage > 0:
+                heir_share = self.calculate_heir_share(inheritance_value, heir_share_percentage)
+                response_data['heir_share'] = heir_share
+                response_data['inheritance_tax'] = self.calculate_inheritance_tax(heir_share)
+
+
 
 
             return Response(response_data, status=status.HTTP_200_OK)
@@ -100,5 +120,40 @@ class ProfitCalculatorViewSet(ViewSet):
         daily_penalty_rate = 0.02 
         base_penalty = 1000000 
         return base_penalty + (delay_days * daily_penalty_rate * base_penalty)
+    
+     # محاسبه مالیات اجاره املاک
+    def calculate_property_rent_tax(self, rent_income):
+        tax_rate = 0.15 
+        return rent_income * tax_rate
+    
+    # محاسبه مالیات نقل‌وانتقال املاک
+    def calculate_property_transfer_tax(self, transfer_value):
+        tax_rate = 0.05 
+        return transfer_value * tax_rate
+    
+    # محاسبه مالیات بر ساخت و فروش املاک
+    def calculate_property_construction_sale_tax(self, construction_sale_value):
+        tax_rate = 0.20 
+        return construction_sale_value * tax_rate
+    
+    # محاسبه سهم وارث
+    def calculate_heir_share(self, inheritance_value, heir_share_percentage):
+        return (inheritance_value * heir_share_percentage) / 100
+
+    # محاسبه مالیات بر ارث
+    def calculate_inheritance_tax(self, heir_share):
+        real_estate_tax_rate = 0.05  # نرخ مالیات املاک
+        bank_deposit_tax_rate = 0.03  # نرخ مالیات سپرده‌های بانکی
+        securities_tax_rate = 0.02  # نرخ مالیات اوراق بهادار
+
+        real_estate_tax = heir_share * real_estate_tax_rate
+        bank_deposit_tax = heir_share * bank_deposit_tax_rate
+        securities_tax = heir_share * securities_tax_rate
+
+        return {
+            'real_estate_tax': real_estate_tax,
+            'bank_deposit_tax': bank_deposit_tax,
+            'securities_tax': securities_tax
+        }
     
     

@@ -32,3 +32,8 @@ class ProfitCalculatorSerializer(serializers.Serializer):
     sales_value = serializers.IntegerField(required=False, default=0) 
     import_value = serializers.IntegerField(required=False, default=0)
     delay_days = serializers.IntegerField(required=False, default=0)
+    rent_income = serializers.IntegerField(required=False, default=0) 
+    transfer_value = serializers.IntegerField(required=False, default=0)    
+    construction_sale_value = serializers.IntegerField(required=False, default=0)
+    inheritance_value = serializers.IntegerField(required=False, default=0)  
+    heir_share_percentage = serializers.IntegerField(required=False, default=0)
