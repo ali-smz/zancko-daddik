@@ -36,9 +36,21 @@ class ProfitCalculatorViewSet(ViewSet):
             construction_sale_value = serializer.validated_data.get('construction_sale_value', 0)
             inheritance_value = serializer.validated_data.get('inheritance_value', 0)
             heir_share_percentage = serializer.validated_data.get('heir_share_percentage', 0)
+            contractor_income = serializer.validated_data.get('contractor_income', 0)
+            personal_service_income = serializer.validated_data.get('personal_service_income', 0)
+            declaration_missing_days = serializer.validated_data.get('declaration_missing_days', 0)  # تعداد روزهای تأخیر در اظهارنامه
+            tax_payment_delay_days = serializer.validated_data.get('tax_payment_delay_days', 0)  # تعداد روزهای تأخیر در پرداخت مالیات
+            rural_insurance_exemption = serializer.validated_data.get('rural_insurance_exemption', False)  # معافیت بیمه روستایی
+            declaration_missing_days = serializer.validated_data.get('declaration_missing_days', 0)
+            tax_payment_delay_days = serializer.validated_data.get('tax_payment_delay_days', 0)
+            correction_penalty_amount = serializer.validated_data.get('correction_penalty_amount', 0)
+            quarterly_income = serializer.validated_data.get('quarterly_income', 0)
+            total_annual_income = serializer.validated_data.get('total_annual_income', 0)
+            paid_taxes = serializer.validated_data.get('paid_taxes', 0)
+            free_zone_exemption = serializer.validated_data.get('free_zone_exemption', False)
+            salary_exemption = serializer.validated_data.get('salary_exemption', False)
 
-
-            
+     
 
             response_data = {}
             if salary > 0:
@@ -73,6 +85,29 @@ class ProfitCalculatorViewSet(ViewSet):
                 heir_share = self.calculate_heir_share(inheritance_value, heir_share_percentage)
                 response_data['heir_share'] = heir_share
                 response_data['inheritance_tax'] = self.calculate_inheritance_tax(heir_share)
+            if contractor_income > 0:
+                response_data['withholding_contractor_tax'] = self.calculate_withholding_contractor_tax(contractor_income)
+            if personal_service_income > 0:
+                response_data['personal_service_tax'] = self.calculate_personal_service_tax(personal_service_income)
+            if declaration_missing_days > 0:
+                response_data['declaration_penalty'] = self.calculate_declaration_penalty(declaration_missing_days)
+            if tax_payment_delay_days > 0:
+                response_data['payment_delay_penalty'] = self.calculate_payment_delay_penalty(tax_payment_delay_days)
+            if rural_insurance_exemption:
+                response_data['rural_insurance_exemption'] = "معافیت مشتركان بیمه روستایی"
+            if correction_penalty_amount > 0:
+                response_data['correction_penalty'] = self.calculate_correction_penalty(correction_penalty_amount)
+            if quarterly_income > 0:
+                response_data['quarterly_tax'] = self.calculate_quarterly_tax(quarterly_income)
+            if total_annual_income > 0:
+                response_data['annual_tax'] = self.calculate_annual_tax(total_annual_income, paid_taxes)
+            if salary_exemption and salary > 0:
+                response_data['salary_exemption'] = self.calculate_salary_exemption(salary)
+            if free_zone_exemption:
+                response_data['free_zone_exemption'] = "معافیت مشتركان منطقه آزاد"
+
+
+
 
 
 
@@ -185,5 +220,48 @@ class ProfitCalculatorViewSet(ViewSet):
     def calculate_export_tax(self, export_value):
         export_tax_rate = 0.04  # نرخ مالیات صادرات
         return export_value * export_tax_rate
+    # محاسبه مالیات قرارداد های پیمانکاری
+    def calculate_withholding_contractor_tax(self, contractor_income):
+        tax_rate = 0.05  # نرخ مالیات ۵٪
+        return contractor_income * tax_rate
+
+    # محاسبه مالیات بر درآمد پزشکان، مشاوران، و افراد حقیقی
+    def calculate_personal_service_tax(self, personal_service_income):
+        tax_rate = 0.10  # نرخ مالیات ۱۰٪
+        return personal_service_income * tax_rate
+
+    
+    def calculate_correction_penalty(self, correction_amount):
+        penalty_rate = 0.1
+        return correction_amount * penalty_rate
+
+    def calculate_salary_exemption(self, salary):
+        exemption_limit = 56000000
+        if salary <= exemption_limit:
+            return "Exempt from tax"
+        else:
+            taxable_salary = salary - exemption_limit
+            return f"Taxable amount: {taxable_salary}"
+
+    def calculate_quarterly_tax(self, quarterly_income):
+        tax_rate = 0.09
+        return quarterly_income * tax_rate
+
+    # --- بخش آخر: محاسبه مالیات پایان سال و معافیت مناطق آزاد ---
+
+    def calculate_annual_tax(self, total_income, paid_taxes):
+        tax_rate = 0.2
+        annual_tax = total_income * tax_rate
+        net_tax = annual_tax - paid_taxes
+        return max(net_tax, 0)
+
+    def calculate_salary_exemption(self, salary):
+        exemption_limit = 56000000
+        if salary <= exemption_limit:
+            return "Exempt from tax"
+        else:
+            taxable_salary = salary - exemption_limit
+            return f"Taxable amount: {taxable_salary}"
+
     
     

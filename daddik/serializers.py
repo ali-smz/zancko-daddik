@@ -40,3 +40,7 @@ class ProfitCalculatorSerializer(serializers.Serializer):
     construction_sale_value = serializers.IntegerField(required=False, default=0)
     inheritance_value = serializers.IntegerField(required=False, default=0)  
     heir_share_percentage = serializers.IntegerField(required=False, default=0)
+    contractor_income = serializers.IntegerField(required=False, default=0)  # درآمد قرارداد پیمانکاری
+    personal_service_income = serializers.IntegerField(required=False, default=0)  # درآمد پزشکان، مشاوران، و افراد حقیقی
+    
+
