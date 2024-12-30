@@ -35,6 +35,7 @@ class ProfitCalculatorSerializer(serializers.Serializer):
     raw_material_import_value = serializers.IntegerField(required=False, default=0)  # واردات مواد اولیه
     equipment_import_value = serializers.IntegerField(required=False, default=0)  # واردات تجهیزات
     delay_days = serializers.IntegerField(required=False, default=0)
+    customs_value = serializers.IntegerField(required=False, default=0)
     rent_income = serializers.IntegerField(required=False, default=0) 
     transfer_value = serializers.IntegerField(required=False, default=0)    
     construction_sale_value = serializers.IntegerField(required=False, default=0)
