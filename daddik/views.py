@@ -14,7 +14,7 @@ class RealPersonViewSet(viewsets.ModelViewSet):
 class LegalPersonViewSet(viewsets.ModelViewSet):
     queryset = LegalPerson.objects.all()
     serializer_class = LegalPersonSerializer
-
+ 
 #ONLINE CALCULATOR
 class ProfitCalculatorViewSet(ViewSet):
     def create(self, request):
@@ -41,8 +41,8 @@ class ProfitCalculatorViewSet(ViewSet):
             declaration_missing_days = serializer.validated_data.get('declaration_missing_days', 0)  # تعداد روزهای تأخیر در اظهارنامه
             tax_payment_delay_days = serializer.validated_data.get('tax_payment_delay_days', 0)  # تعداد روزهای تأخیر در پرداخت مالیات
             rural_insurance_exemption = serializer.validated_data.get('rural_insurance_exemption', False)  # معافیت بیمه روستایی
-            declaration_missing_days = serializer.validated_data.get('declaration_missing_days', 0)
-            tax_payment_delay_days = serializer.validated_data.get('tax_payment_delay_days', 0)
+            # declaration_missing_days = serializer.validated_data.get('declaration_missing_days', 0)
+            # tax_payment_delay_days = serializer.validated_data.get('tax_payment_delay_days', 0)
             correction_penalty_amount = serializer.validated_data.get('correction_penalty_amount', 0)
             quarterly_income = serializer.validated_data.get('quarterly_income', 0)
             total_annual_income = serializer.validated_data.get('total_annual_income', 0)
@@ -106,13 +106,6 @@ class ProfitCalculatorViewSet(ViewSet):
             if free_zone_exemption:
                 response_data['free_zone_exemption'] = "معافیت مشتركان منطقه آزاد"
 
-
-
-
-
-
-
-
             return Response(response_data, status=status.HTTP_200_OK)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -149,6 +142,12 @@ class ProfitCalculatorViewSet(ViewSet):
     # مالیات بر درامد ‍‍‍‍‍‍‍پمانکاران
     def calculate_contractor_tax(self, contract_value):
         return contract_value * 0.05
+    
+    # تاخیر در اظهارنامه
+    def calculate_declaration_penalty(self, missing_days):
+        daily_penalty_rate = 0.02
+        base_penalty = 2000000
+        return base_penalty + (missing_days * daily_penalty_rate * base_penalty)
     
     # مالیات فروش کالا و خدمات
     def calculate_vat_sales(self, sales_value):

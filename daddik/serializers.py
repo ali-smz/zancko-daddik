@@ -42,5 +42,14 @@ class ProfitCalculatorSerializer(serializers.Serializer):
     heir_share_percentage = serializers.IntegerField(required=False, default=0)
     contractor_income = serializers.IntegerField(required=False, default=0)  # درآمد قرارداد پیمانکاری
     personal_service_income = serializers.IntegerField(required=False, default=0)  # درآمد پزشکان، مشاوران، و افراد حقیقی
+    declaration_missing_days = serializers.IntegerField(required=False, default=0)
+    tax_payment_delay_days = serializers.IntegerField(required=False, default=0)
+    rural_insurance_exemption = serializers.BooleanField(required=False, default=False)
+    correction_penalty_amount = serializers.IntegerField(required=False, default=0)
+    quarterly_income = serializers.IntegerField(required=False, default=0)
+    total_annual_income = serializers.IntegerField(required=False, default=0)
+    paid_taxes = serializers.IntegerField(required=False, default=0)
+    free_zone_exemption = serializers.BooleanField(required=False, default=False)
+    salary_exemption = serializers.BooleanField(required=False, default=False)
     
 
