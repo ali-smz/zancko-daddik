@@ -2,9 +2,11 @@ from django.shortcuts import render
 from rest_framework.response import Response
 from rest_framework.viewsets import ViewSet
 from rest_framework import viewsets , status
-from .models import LegalPerson , RealPerson
-from .serializers import RealPersonSerializer ,  LegalPersonSerializer , ProfitCalculatorSerializer
-from .tax_calculator import (  # Import all calculation functions
+from .models import User
+from .serializers import ProfitCalculatorSerializer
+from django.contrib.auth.hashers import make_password
+from rest_framework.decorators import action
+from .tax_calculator import (
     calculate_income_tax,
     calculate_corporate_tax,
     calculate_personal_business_tax,
@@ -30,17 +32,19 @@ from .tax_calculator import (  # Import all calculation functions
     calculate_annual_tax,
     calculate_payment_delay_penalty,
 )
+from rest_framework.authtoken.models import Token
+from rest_framework.permissions import AllowAny , IsAuthenticated
+from rest_framework import generics
+from django.contrib.auth import authenticate
+from rest_framework.exceptions import ValidationError
+from .serializers import UserSerializer
 
 # Create your views here.
-class RealPersonViewSet(viewsets.ModelViewSet):
-    queryset = RealPerson.objects.all()
-    serializer_class = RealPersonSerializer
+class CreateUserView(generics.CreateAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    permission_classes = [AllowAny]
 
-
-class LegalPersonViewSet(viewsets.ModelViewSet):
-    queryset = LegalPerson.objects.all()
-    serializer_class = LegalPersonSerializer
- 
 #ONLINE CALCULATOR
 class ProfitCalculatorViewSet(ViewSet):
     def create(self, request):

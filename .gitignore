@@ -6,9 +6,6 @@ venv/
 *.pyo
 __pycache__/
 
-# Ignore Django migrations
-*/migrations/
-
 # Ignore database files
 *.sqlite3
 

@@ -1,6 +1,5 @@
 from django.contrib import admin
-from .models import RealPerson , LegalPerson
+from .models import User
 # Register your models here.
 
-admin.site.register(RealPerson)
-admin.site.register(LegalPerson)
+admin.site.register(User)
