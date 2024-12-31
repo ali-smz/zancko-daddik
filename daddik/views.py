@@ -4,8 +4,6 @@ from rest_framework.viewsets import ViewSet
 from rest_framework import viewsets , status
 from .models import User
 from .serializers import ProfitCalculatorSerializer
-from django.contrib.auth.hashers import make_password
-from rest_framework.decorators import action
 from .tax_calculator import (
     calculate_income_tax,
     calculate_corporate_tax,
@@ -32,18 +30,20 @@ from .tax_calculator import (
     calculate_annual_tax,
     calculate_payment_delay_penalty,
 )
-from rest_framework.authtoken.models import Token
-from rest_framework.permissions import AllowAny , IsAuthenticated
+from rest_framework.permissions import AllowAny
 from rest_framework import generics
-from django.contrib.auth import authenticate
-from rest_framework.exceptions import ValidationError
-from .serializers import UserSerializer
+from .serializers import UserSerializer , AllUsers
 
 # Create your views here.
 class CreateUserView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = [AllowAny]
+
+
+class UserListView(viewsets.ModelViewSet):
+    queryset = User.objects.all() 
+    serializer_class = AllUsers
 
 #ONLINE CALCULATOR
 class ProfitCalculatorViewSet(ViewSet):
