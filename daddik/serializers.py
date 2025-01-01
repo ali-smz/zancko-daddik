@@ -22,8 +22,7 @@ class UserSerializer(serializers.ModelSerializer):
             'introductionLetter', 'stars', 'isPremium'
         ]
         extra_kwargs = {
-            'password': {'write_only': True},  # Password is write-only
-            # Optional fields
+            'password': {'write_only': True},
             'name': {'required': False, 'allow_blank': True},
             'lastName': {'required': False, 'allow_blank': True},
             'lable': {'required': False},
@@ -49,11 +48,9 @@ class UserSerializer(serializers.ModelSerializer):
         }
 
     def create(self, validated_data):
-        # Use the custom manager's `create_user` method
         user = User.objects.create_user(
             username=validated_data['username'],
             password=validated_data['password'],
-            # Optional fields are passed using `.get()` to avoid KeyErrors
             name=validated_data.get('name', ''),
             lastName=validated_data.get('lastName', ''),
             lable=validated_data.get('lable', 'unknown'),
@@ -80,7 +77,6 @@ class UserSerializer(serializers.ModelSerializer):
         return user
 
     def to_representation(self, instance):
-        """Customize the response after creation."""
         return {
             'id': instance.id,
             'username': instance.username,

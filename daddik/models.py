@@ -12,20 +12,8 @@ class UserManager(BaseUserManager):
         user.save(using=self._db)
         return user
 
-    def create_superuser(self, username, password, **extra_fields):
-        extra_fields.setdefault('is_staff', True)
-        extra_fields.setdefault('is_superuser', True)
 
-        if not extra_fields.get('is_staff'):
-            raise ValueError('Superuser must have is_staff=True.')
-        if not extra_fields.get('is_superuser'):
-            raise ValueError('Superuser must have is_superuser=True.')
-
-        return self.create_user(username=username, password=password, **extra_fields)
-
-
-
-class User(AbstractBaseUser, PermissionsMixin):
+class User(AbstractBaseUser):
     STATUS_CHOICES = [
         ('real', 'Real'),
         ('legal', 'Legal'),
@@ -56,28 +44,18 @@ class User(AbstractBaseUser, PermissionsMixin):
     introductionLetter = models.FileField(upload_to='uploads/pdfs', blank=True)
     stars = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(5)], default=0)
     isPremium = models.BooleanField(default=False)
-    is_staff = models.BooleanField(default=False)  # Required for Django admin
-    is_active = models.BooleanField(default=True)  # Required for authentication
     createdAt = models.DateTimeField(auto_now_add=True)
     updatedAt = models.DateTimeField(auto_now=True)
 
-    groups = models.ManyToManyField(
-        'auth.Group',
-        related_name='daddik_user_set',
-        blank=True,
-        help_text='The groups this user belongs to.',
-    )
-    user_permissions = models.ManyToManyField(
-        'auth.Permission',
-        related_name='daddik_user_set',
-        blank=True,
-        help_text='Specific permissions for this user.',
-    )
+    groups = None
+    user_permissions = None
+    is_superuser = None
+    last_login = None
 
     objects = UserManager()
 
-    USERNAME_FIELD = 'username'  # Field used for login
-    REQUIRED_FIELDS = []  # Fields required when creating a superuser
+    USERNAME_FIELD = 'username' 
+    REQUIRED_FIELDS = [] 
 
     def __str__(self):
         return f'{self.username} | {self.lable}'
