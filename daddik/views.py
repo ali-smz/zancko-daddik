@@ -30,8 +30,9 @@ from .tax_calculator import (
     calculate_annual_tax,
     calculate_payment_delay_penalty,
 )
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny , IsAuthenticated
 from rest_framework import generics
+from rest_framework.views import APIView
 from .serializers import UserSerializer , AllUsers
 
 # Create your views here.
@@ -44,6 +45,15 @@ class CreateUserView(generics.CreateAPIView):
 class UserListView(viewsets.ModelViewSet):
     queryset = User.objects.all() 
     serializer_class = AllUsers
+
+
+class UserDashboardView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        serializer = UserSerializer(user)
+        return Response(serializer.data, status=200)
 
 #ONLINE CALCULATOR
 class ProfitCalculatorViewSet(ViewSet):
