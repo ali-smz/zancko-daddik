@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User
+from .models import User , Message
 
 
 
@@ -9,7 +9,15 @@ class AllUsers(serializers.ModelSerializer):
         fields = '__all__'  
 
 
+class MessageSerializer(serializers.ModelSerializer):
+     class Meta:
+        model = Message
+        fields = ['id', 'sender', 'recipient', 'body', 'created_at']
+        read_only_fields = ['id', 'sender', 'created_at']
+
+
 class UserSerializer(serializers.ModelSerializer):
+    messages = MessageSerializer(many=True, read_only=True)
     class Meta:
         model = User
         fields = [
@@ -19,7 +27,7 @@ class UserSerializer(serializers.ModelSerializer):
             'companyWebsite', 'companyEmail', 'connectorName', 
             'connectorLastname', 'connectorNationalCode', 
             'connectorPhoneNumber', 'connectorRole', 
-            'introductionLetter', 'stars', 'isPremium'
+            'introductionLetter', 'stars', 'isPremium' , 'messages'
         ]
         extra_kwargs = {
             'password': {'write_only': True},
@@ -45,6 +53,7 @@ class UserSerializer(serializers.ModelSerializer):
             'introductionLetter': {'required': False, 'allow_null': True},
             'stars': {'required': False},
             'isPremium': {'required': False},
+            'messages' : {'read_only' : True}
         }
 
     def create(self, validated_data):

@@ -2,8 +2,9 @@ from django.shortcuts import render
 from rest_framework.response import Response
 from rest_framework.viewsets import ViewSet
 from rest_framework import viewsets , status
-from .models import User
-from .serializers import ProfitCalculatorSerializer
+from .models import User , Message
+from django.conf import settings
+from .serializers import ProfitCalculatorSerializer , MessageSerializer
 from .tax_calculator import (
     calculate_income_tax,
     calculate_corporate_tax,
@@ -46,6 +47,36 @@ class UserListView(viewsets.ModelViewSet):
     queryset = User.objects.all() 
     serializer_class = AllUsers
 
+class MessageListCreateView(APIView):
+    permission_classes = [IsAuthenticated]  # Ensure user is authenticated
+
+    def get(self, request):
+        """Retrieve messages for the authenticated user."""
+        messages = Message.objects.filter(recipient=request.user)
+        serializer = MessageSerializer(messages, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        """Send a message to a recipient."""
+        serializer = MessageSerializer(data=request.data)
+
+        if serializer.is_valid():
+            recipient = serializer.validated_data.get('recipient')
+
+            # Prevent sending messages to self
+            if recipient == request.user:
+                return Response(
+                    {"error": "You cannot send a message to yourself."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            # Automatically set the sender to the admin user
+            admin_user = settings.AUTH_USER_MODEL.objects.get(id=43)  # Replace with your admin user logic
+            message = serializer.save(sender=admin_user)
+
+            return Response(MessageSerializer(message).data, status=status.HTTP_201_CREATED)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class UserDashboardView(APIView):
     permission_classes = [IsAuthenticated]

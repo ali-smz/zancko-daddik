@@ -1,6 +1,7 @@
 from django.db import models
 from django.core.validators import MinLengthValidator , MinValueValidator , MaxValueValidator
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
+from django.conf import settings
 
 # Create your models here.
 class UserManager(BaseUserManager):
@@ -59,3 +60,16 @@ class User(AbstractBaseUser):
 
     def __str__(self):
         return f'{self.username} | {self.lable}'
+
+
+class Message(models.Model):
+    recipient = models.ForeignKey(
+        settings.AUTH_USER_MODEL,  # Custom User model
+        on_delete=models.CASCADE,  # Delete messages if the user is deleted
+        related_name='messages',  # Enables user.messages to access messages
+    )
+    content = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Message to {self.recipient.username} at {self.created_at}"
