@@ -24,6 +24,7 @@ class User(AbstractBaseUser):
     lable = models.CharField(max_length=20, choices=STATUS_CHOICES, default='unknown')
     username = models.CharField(max_length=11, unique=True)
     password = models.CharField(max_length=50, validators=[MinLengthValidator(8)])
+    profilePicture = models.FileField(upload_to='uploads/images', blank=True)
     name = models.CharField(max_length=50, blank=True)
     lastName = models.CharField(max_length=50, blank=True)
     job = models.CharField(max_length=50, blank=True)
@@ -43,6 +44,8 @@ class User(AbstractBaseUser):
     connectorPhoneNumber = models.CharField(max_length=11, blank=True)
     connectorRole = models.CharField(max_length=20, blank=True)
     introductionLetter = models.FileField(upload_to='uploads/pdfs', blank=True)
+    searchs = models.IntegerField(validators=[MinValueValidator(0) , MaxValueValidator(7)] , default=0)
+    billsNumber = models.IntegerField(validators=[MinValueValidator(0) , MaxValueValidator(3)] , default=0)
     stars = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(5)], default=0)
     isPremium = models.BooleanField(default=False)
     createdAt = models.DateTimeField(auto_now_add=True)
@@ -60,6 +63,7 @@ class User(AbstractBaseUser):
 
     def __str__(self):
         return f'{self.username} | {self.lable}'
+
 
 
 class Message(models.Model):

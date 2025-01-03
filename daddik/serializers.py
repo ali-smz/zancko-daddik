@@ -20,41 +20,8 @@ class UserSerializer(serializers.ModelSerializer):
     messages = MessageSerializer(many=True, read_only=True)
     class Meta:
         model = User
-        fields = [
-            'username', 'password', 'name', 'lastName', 'lable', 'job', 
-            'national_code', 'address', 'workNumber', 'role', 'companyName', 
-            'companyNationalId', 'document', 'officialNewspaper', 
-            'companyWebsite', 'companyEmail', 'connectorName', 
-            'connectorLastname', 'connectorNationalCode', 
-            'connectorPhoneNumber', 'connectorRole', 
-            'introductionLetter', 'stars', 'isPremium' , 'messages'
-        ]
-        extra_kwargs = {
-            'password': {'write_only': True},
-            'name': {'required': False, 'allow_blank': True},
-            'lastName': {'required': False, 'allow_blank': True},
-            'lable': {'required': False},
-            'job': {'required': False, 'allow_blank': True},
-            'national_code': {'required': False, 'allow_null': True, 'allow_blank': True},
-            'address': {'required': False, 'allow_blank': True},
-            'workNumber': {'required': False, 'allow_null': True, 'allow_blank': True},
-            'role': {'required': False, 'allow_blank': True},
-            'companyName': {'required': False, 'allow_blank': True},
-            'companyNationalId': {'required': False, 'allow_null': True, 'allow_blank': True},
-            'document': {'required': False, 'allow_null': True},
-            'officialNewspaper': {'required': False, 'allow_null': True},
-            'companyWebsite': {'required': False, 'allow_blank': True},
-            'companyEmail': {'required': False, 'allow_blank': True},
-            'connectorName': {'required': False, 'allow_blank': True},
-            'connectorLastname': {'required': False, 'allow_blank': True},
-            'connectorNationalCode': {'required': False, 'allow_blank': True},
-            'connectorPhoneNumber': {'required': False, 'allow_blank': True},
-            'connectorRole': {'required': False, 'allow_blank': True},
-            'introductionLetter': {'required': False, 'allow_null': True},
-            'stars': {'required': False},
-            'isPremium': {'required': False},
-            'messages' : {'read_only' : True}
-        }
+        fields = '__all__'
+        extra_kwargs = { 'password': {'write_only': True} }
 
     def create(self, validated_data):
         user = User.objects.create_user(
@@ -62,6 +29,7 @@ class UserSerializer(serializers.ModelSerializer):
             password=validated_data['password'],
             name=validated_data.get('name', ''),
             lastName=validated_data.get('lastName', ''),
+            profilePicture=validated_data.get('profilePicture', None),
             lable=validated_data.get('lable', 'unknown'),
             job=validated_data.get('job', ''),
             national_code=validated_data.get('national_code', None),
@@ -81,6 +49,8 @@ class UserSerializer(serializers.ModelSerializer):
             connectorRole=validated_data.get('connectorRole', ''),
             introductionLetter=validated_data.get('introductionLetter', None),
             stars=validated_data.get('stars', 0),
+            searchs=validated_data.get('searchs', 0),
+            billsNumber=validated_data.get('billsNumber', 0),
             isPremium=validated_data.get('isPremium', False),
         )
         return user
@@ -91,6 +61,7 @@ class UserSerializer(serializers.ModelSerializer):
             'username': instance.username,
             'name': instance.name,
             'lastName': instance.lastName,
+            'profilePicture': instance.profilePicture.url if instance.profilePicture else None,
             'lable': instance.lable,
             'job': instance.job,
             'national_code': instance.national_code,
@@ -110,6 +81,8 @@ class UserSerializer(serializers.ModelSerializer):
             'connectorRole': instance.connectorRole,
             'introductionLetter': instance.introductionLetter.url if instance.introductionLetter else None,
             'stars': instance.stars,
+            'searchs': instance.searchs,
+            'billsNumber': instance.billsNumber,
             'isPremium': instance.isPremium,
             'createdAt': instance.createdAt,
             'updatedAt': instance.updatedAt,
