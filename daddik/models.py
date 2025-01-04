@@ -3,7 +3,7 @@ import string
 from django.db import models
 from django.core.validators import MinLengthValidator , MinValueValidator , MaxValueValidator
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
-from django.conf import settings
+from django.utils.timezone import now
 
 # Create your models here.
 class UserManager(BaseUserManager):
@@ -14,9 +14,6 @@ class UserManager(BaseUserManager):
         user.set_password(password)
         user.save(using=self._db)
         return user
-
-def generate_referral_code():
-    return ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
 
 
 class User(AbstractBaseUser):
@@ -79,6 +76,9 @@ class User(AbstractBaseUser):
     @staticmethod
     def generate_referral_code(length=8):
         return ''.join(random.choices(string.ascii_uppercase + string.digits, k=length))
+    
+    def get_current_subscription(self):
+        return UserSubscription.objects.filter(user=self, end_date__gte=now()).first()
 
     def __str__(self):
         return f'{self.username} | {self.lable}'
@@ -95,3 +95,34 @@ class Message(models.Model):
 
     def __str__(self):
         return f'Message to {self.recipient.username} at {self.created_at}'
+    
+
+class SubscriptionPlan(models.Model):
+    PLAN_CHOICES = [
+        ('free', 'Free'),
+        ('bronze', 'Bronze'),
+        ('silver', 'Silver'),
+        ('gold', 'Gold'),
+    ]
+
+    name = models.CharField(max_length=20, choices=PLAN_CHOICES, unique=True , default='free')
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+    duration = models.IntegerField(default=5) 
+
+    def __str__(self):
+        return f"{self.name.capitalize()} Plan - ${self.price}"
+
+
+class UserSubscription(models.Model):
+    user = models.OneToOneField(
+        User, on_delete=models.CASCADE, related_name="subscription"
+    )
+    plan = models.ForeignKey(SubscriptionPlan, on_delete=models.SET_NULL, null=True)
+    start_date = models.DateTimeField(auto_now_add=True)
+    end_date = models.DateTimeField()
+
+    def is_active(self):
+        return self.end_date >= now()
+
+    def __str__(self):
+        return f"{self.user.username} - {self.plan.name.capitalize()}"

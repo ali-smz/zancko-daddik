@@ -1,7 +1,8 @@
 from rest_framework.response import Response
 from rest_framework.viewsets import ViewSet
 from rest_framework import viewsets , status
-from .models import User , Message
+from .models import User , Message , UserSubscription , SubscriptionPlan
+from django.utils.timezone import now
 from .serializers import ProfitCalculatorSerializer , MessageSerializer
 from .tax_calculator import (
     calculate_income_tax,
@@ -33,6 +34,8 @@ from rest_framework.permissions import AllowAny , IsAuthenticated
 from rest_framework import generics
 from rest_framework.views import APIView
 from .serializers import UserSerializer , AllUsers
+from datetime import timedelta
+
 
 # Create your views here.
 class CreateUserView(generics.CreateAPIView):
@@ -100,6 +103,29 @@ class UserDashboardView(APIView):
         user = request.user
         serializer = UserSerializer(user)
         return Response(serializer.data, status=200)
+    
+class ChangeSubscriptionPlanView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        plan_name = request.data.get('plan')
+
+        try:
+            plan = SubscriptionPlan.objects.get(name=plan_name)
+        except SubscriptionPlan.DoesNotExist:
+            return Response({'error': 'Invalid plan name'}, status=status.HTTP_400_BAD_REQUEST)
+
+        user_subscription = user.subscription
+        user_subscription.plan = plan
+        user_subscription.end_date = now() + timedelta(plan.duration)
+        user_subscription.save()
+
+        return Response({
+            'message': f'Successfully changed to {plan.name.capitalize()} plan',
+            'plan': plan.name,
+            'end_date': user_subscription.end_date
+        }, status=status.HTTP_200_OK)
 
 #ONLINE CALCULATOR
 class ProfitCalculatorViewSet(ViewSet):

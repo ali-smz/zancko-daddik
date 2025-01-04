@@ -1,5 +1,8 @@
 from rest_framework import serializers
 from .models import User , Message
+from django.utils.timezone import now
+from .models import SubscriptionPlan , UserSubscription
+from datetime import timedelta
 
 
 
@@ -11,21 +14,48 @@ class MessageSerializer(serializers.ModelSerializer):
 
 class AllUsers(serializers.ModelSerializer):
     messages = MessageSerializer(many=True, read_only=True)
+    subscription = serializers.SerializerMethodField() 
     class Meta:
         model = User
         fields = '__all__'  
+    
+    def get_subscription(self, instance):
+        if hasattr(instance, 'subscription'):
+            return {
+                'plan': instance.subscription.plan.name,
+                'start_date': instance.subscription.start_date,
+                'end_date': instance.subscription.end_date,
+                'is_active': instance.subscription.is_active()
+            }
+        return None
 
 
 class UserSerializer(serializers.ModelSerializer):
     referral_code = serializers.ReadOnlyField()  # Ensure referral code is not user-editable
     referred_by_code = serializers.CharField(write_only=True, required=False)
     messages = MessageSerializer(many=True, read_only=True)
+    subscription = serializers.SerializerMethodField() 
     class Meta:
         model = User
         fields = '__all__'
         extra_kwargs = { 'password': {'write_only': True} }
 
+    def get_subscription(self, instance):
+        if hasattr(instance, 'subscription'):
+            return {
+                'plan': instance.subscription.plan.name,
+                'start_date': instance.subscription.start_date,
+                'end_date': instance.subscription.end_date,
+                'is_active': instance.subscription.is_active()
+            }
+        return None
+
     def create(self, validated_data):
+        try:
+            default_plan = SubscriptionPlan.objects.get(name='free')
+        except SubscriptionPlan.DoesNotExist:
+            raise serializers.ValidationError("The 'free' subscription plan is missing.")
+        
         referred_by_code = validated_data.pop('referred_by_code', None)
         user = User.objects.create_user(
             username=validated_data['username'],
@@ -56,6 +86,15 @@ class UserSerializer(serializers.ModelSerializer):
             billsNumber=validated_data.get('billsNumber', 0),
             isPremium=validated_data.get('isPremium', False),
         )
+
+        UserSubscription.objects.create(
+            user=user,
+            plan=default_plan,
+            start_date=now(),
+            end_date=now() + timedelta(default_plan.duration)
+        )
+
+
         if referred_by_code:
             try:
                 referrer = User.objects.get(referral_code=referred_by_code)
@@ -68,7 +107,7 @@ class UserSerializer(serializers.ModelSerializer):
                 pass  
 
         return user
-
+    
     def to_representation(self, instance):
         representation = super().to_representation(instance)
         print(instance.messages.all())
@@ -95,7 +134,6 @@ class UserSerializer(serializers.ModelSerializer):
             representation['referred_by'] = None
         representation['referral_count'] = instance.referral_count
 
-        # Include user's messages
         representation['messages'] = MessageSerializer(instance.messages.all(), many=True).data
         return representation
         
