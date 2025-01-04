@@ -1,9 +1,8 @@
-from django.shortcuts import render
 from rest_framework.response import Response
 from rest_framework.viewsets import ViewSet
 from rest_framework import viewsets , status
-from .models import User
-from .serializers import ProfitCalculatorSerializer
+from .models import User , Message
+from .serializers import ProfitCalculatorSerializer , MessageSerializer
 from .tax_calculator import (
     calculate_income_tax,
     calculate_corporate_tax,
@@ -30,8 +29,9 @@ from .tax_calculator import (
     calculate_annual_tax,
     calculate_payment_delay_penalty,   
 )
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny , IsAuthenticated
 from rest_framework import generics
+from rest_framework.views import APIView
 from .serializers import UserSerializer , AllUsers
 
 # Create your views here.
@@ -44,6 +44,62 @@ class CreateUserView(generics.CreateAPIView):
 class UserListView(viewsets.ModelViewSet):
     queryset = User.objects.all() 
     serializer_class = AllUsers
+
+class SendMessageView(generics.CreateAPIView):
+    queryset = Message.objects.all()
+    serializer_class = MessageSerializer
+    permission_classes = [IsAuthenticated]
+
+    def create(self, request, *args, **kwargs):
+        recipient_id = request.data.get('recipient')
+        body = request.data.get('body')
+
+        if recipient_id == request.user.id :
+            return Response(
+                            {'error' : 'You can not message to yourself !'}, 
+                            status=status.HTTP_400_BAD_REQUEST
+                        )
+        
+        try:
+            recipient = User.objects.get(id=recipient_id)
+        except User.DoesNotExist:
+            return Response(
+                {'error': 'Recipient does not exist'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        message = Message.objects.create(
+            recipient=recipient,
+            body=body
+        )
+        return Response(
+            {
+                'id': message.id,
+                'recipient': recipient.username,
+                'body': message.body,
+                'read' : message.read ,
+                'created_at': message.created_at
+            },
+            status=status.HTTP_201_CREATED
+        )
+
+class GetUserMessagesView(APIView):
+    permission_classes = [IsAuthenticated] 
+
+    def get(self, request):
+        user = request.user
+        messages = Message.objects.filter(recipient=user)
+        serializer = MessageSerializer(messages, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class UserDashboardView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        serializer = UserSerializer(user)
+        return Response(serializer.data, status=200)
 
 #ONLINE CALCULATOR
 class ProfitCalculatorViewSet(ViewSet):

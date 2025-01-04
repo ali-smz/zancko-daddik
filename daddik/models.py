@@ -1,6 +1,9 @@
+import random
+import string
 from django.db import models
 from django.core.validators import MinLengthValidator , MinValueValidator , MaxValueValidator
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
+from django.conf import settings
 
 # Create your models here.
 class UserManager(BaseUserManager):
@@ -12,20 +15,11 @@ class UserManager(BaseUserManager):
         user.save(using=self._db)
         return user
 
-    def create_superuser(self, username, password, **extra_fields):
-        extra_fields.setdefault('is_staff', True)
-        extra_fields.setdefault('is_superuser', True)
-
-        if not extra_fields.get('is_staff'):
-            raise ValueError('Superuser must have is_staff=True.')
-        if not extra_fields.get('is_superuser'):
-            raise ValueError('Superuser must have is_superuser=True.')
-
-        return self.create_user(username=username, password=password, **extra_fields)
+def generate_referral_code():
+    return ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
 
 
-
-class User(AbstractBaseUser, PermissionsMixin):
+class User(AbstractBaseUser):
     STATUS_CHOICES = [
         ('real', 'Real'),
         ('legal', 'Legal'),
@@ -35,6 +29,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     lable = models.CharField(max_length=20, choices=STATUS_CHOICES, default='unknown')
     username = models.CharField(max_length=11, unique=True)
     password = models.CharField(max_length=50, validators=[MinLengthValidator(8)])
+    profilePicture = models.FileField(upload_to='uploads/images', blank=True)
     name = models.CharField(max_length=50, blank=True)
     lastName = models.CharField(max_length=50, blank=True)
     job = models.CharField(max_length=50, blank=True)
@@ -54,30 +49,49 @@ class User(AbstractBaseUser, PermissionsMixin):
     connectorPhoneNumber = models.CharField(max_length=11, blank=True)
     connectorRole = models.CharField(max_length=20, blank=True)
     introductionLetter = models.FileField(upload_to='uploads/pdfs', blank=True)
+    searchs = models.IntegerField(validators=[MinValueValidator(0) , MaxValueValidator(7)] , default=0)
+    billsNumber = models.IntegerField(validators=[MinValueValidator(0) , MaxValueValidator(3)] , default=0)
     stars = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(5)], default=0)
+    referral_code = models.CharField(max_length=10, unique=True, blank=True, null=True)
+    referred_by = models.ForeignKey(
+        'self', on_delete=models.SET_NULL, related_name='referrals', null=True, blank=True
+    )
+    referral_count = models.IntegerField(default=0)
     isPremium = models.BooleanField(default=False)
-    is_staff = models.BooleanField(default=False)  # Required for Django admin
-    is_active = models.BooleanField(default=True)  # Required for authentication
     createdAt = models.DateTimeField(auto_now_add=True)
     updatedAt = models.DateTimeField(auto_now=True)
 
-    groups = models.ManyToManyField(
-        'auth.Group',
-        related_name='daddik_user_set',
-        blank=True,
-        help_text='The groups this user belongs to.',
-    )
-    user_permissions = models.ManyToManyField(
-        'auth.Permission',
-        related_name='daddik_user_set',
-        blank=True,
-        help_text='Specific permissions for this user.',
-    )
+    groups = None
+    user_permissions = None
+    is_superuser = None
+    last_login = None
 
     objects = UserManager()
 
-    USERNAME_FIELD = 'username'  # Field used for login
-    REQUIRED_FIELDS = []  # Fields required when creating a superuser
+    USERNAME_FIELD = 'username' 
+    REQUIRED_FIELDS = [] 
+
+    def save(self, *args, **kwargs):
+        if not self.referral_code:
+            self.referral_code = self.generate_referral_code()
+        super().save(*args, **kwargs)
+
+    @staticmethod
+    def generate_referral_code(length=8):
+        return ''.join(random.choices(string.ascii_uppercase + string.digits, k=length))
 
     def __str__(self):
         return f'{self.username} | {self.lable}'
+
+
+
+class Message(models.Model):
+    recipient = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name='messages'
+    )
+    body = models.TextField()
+    read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f'Message to {self.recipient.username} at {self.created_at}'

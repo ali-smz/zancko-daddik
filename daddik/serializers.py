@@ -1,61 +1,38 @@
 from rest_framework import serializers
-from .models import User
+from .models import User , Message
 
+
+
+class MessageSerializer(serializers.ModelSerializer):
+     class Meta:
+        model = Message
+        fields = '__all__'
 
 
 class AllUsers(serializers.ModelSerializer):
+    messages = MessageSerializer(many=True, read_only=True)
     class Meta:
         model = User
         fields = '__all__'  
 
 
 class UserSerializer(serializers.ModelSerializer):
+    referral_code = serializers.ReadOnlyField()  # Ensure referral code is not user-editable
+    referred_by_code = serializers.CharField(write_only=True, required=False)
+    messages = MessageSerializer(many=True, read_only=True)
     class Meta:
         model = User
-        fields = [
-            'username', 'password', 'name', 'lastName', 'lable', 'job', 
-            'national_code', 'address', 'workNumber', 'role', 'companyName', 
-            'companyNationalId', 'document', 'officialNewspaper', 
-            'companyWebsite', 'companyEmail', 'connectorName', 
-            'connectorLastname', 'connectorNationalCode', 
-            'connectorPhoneNumber', 'connectorRole', 
-            'introductionLetter', 'stars', 'isPremium'
-        ]
-        extra_kwargs = {
-            'password': {'write_only': True},  # Password is write-only
-            # Optional fields
-            'name': {'required': False, 'allow_blank': True},
-            'lastName': {'required': False, 'allow_blank': True},
-            'lable': {'required': False},
-            'job': {'required': False, 'allow_blank': True},
-            'national_code': {'required': False, 'allow_null': True, 'allow_blank': True},
-            'address': {'required': False, 'allow_blank': True},
-            'workNumber': {'required': False, 'allow_null': True, 'allow_blank': True},
-            'role': {'required': False, 'allow_blank': True},
-            'companyName': {'required': False, 'allow_blank': True},
-            'companyNationalId': {'required': False, 'allow_null': True, 'allow_blank': True},
-            'document': {'required': False, 'allow_null': True},
-            'officialNewspaper': {'required': False, 'allow_null': True},
-            'companyWebsite': {'required': False, 'allow_blank': True},
-            'companyEmail': {'required': False, 'allow_blank': True},
-            'connectorName': {'required': False, 'allow_blank': True},
-            'connectorLastname': {'required': False, 'allow_blank': True},
-            'connectorNationalCode': {'required': False, 'allow_blank': True},
-            'connectorPhoneNumber': {'required': False, 'allow_blank': True},
-            'connectorRole': {'required': False, 'allow_blank': True},
-            'introductionLetter': {'required': False, 'allow_null': True},
-            'stars': {'required': False},
-            'isPremium': {'required': False},
-        }
+        fields = '__all__'
+        extra_kwargs = { 'password': {'write_only': True} }
 
     def create(self, validated_data):
-        # Use the custom manager's `create_user` method
+        referred_by_code = validated_data.pop('referred_by_code', None)
         user = User.objects.create_user(
             username=validated_data['username'],
             password=validated_data['password'],
-            # Optional fields are passed using `.get()` to avoid KeyErrors
             name=validated_data.get('name', ''),
             lastName=validated_data.get('lastName', ''),
+            profilePicture=validated_data.get('profilePicture', None),
             lable=validated_data.get('lable', 'unknown'),
             job=validated_data.get('job', ''),
             national_code=validated_data.get('national_code', None),
@@ -75,40 +52,52 @@ class UserSerializer(serializers.ModelSerializer):
             connectorRole=validated_data.get('connectorRole', ''),
             introductionLetter=validated_data.get('introductionLetter', None),
             stars=validated_data.get('stars', 0),
+            searchs=validated_data.get('searchs', 0),
+            billsNumber=validated_data.get('billsNumber', 0),
             isPremium=validated_data.get('isPremium', False),
         )
+        if referred_by_code:
+            try:
+                referrer = User.objects.get(referral_code=referred_by_code)
+                user.referred_by = referrer
+                user.save()
+
+                referrer.referral_count += 1
+                referrer.save()
+            except User.DoesNotExist:
+                pass  
+
         return user
 
     def to_representation(self, instance):
-        """Customize the response after creation."""
-        return {
-            'id': instance.id,
-            'username': instance.username,
-            'name': instance.name,
-            'lastName': instance.lastName,
-            'lable': instance.lable,
-            'job': instance.job,
-            'national_code': instance.national_code,
-            'address': instance.address,
-            'workNumber': instance.workNumber,
-            'role': instance.role,
-            'companyName': instance.companyName,
-            'companyNationalId': instance.companyNationalId,
-            'document': instance.document.url if instance.document else None,
-            'officialNewspaper': instance.officialNewspaper.url if instance.officialNewspaper else None,
-            'companyWebsite': instance.companyWebsite,
-            'companyEmail': instance.companyEmail,
-            'connectorName': instance.connectorName,
-            'connectorLastname': instance.connectorLastname,
-            'connectorNationalCode': instance.connectorNationalCode,
-            'connectorPhoneNumber': instance.connectorPhoneNumber,
-            'connectorRole': instance.connectorRole,
-            'introductionLetter': instance.introductionLetter.url if instance.introductionLetter else None,
-            'stars': instance.stars,
-            'isPremium': instance.isPremium,
-            'createdAt': instance.createdAt,
-            'updatedAt': instance.updatedAt,
-        }
+        representation = super().to_representation(instance)
+        print(instance.messages.all())
+        representation['profilePicture'] = (
+            instance.profilePicture.url if instance.profilePicture else None
+        )
+        representation['document'] = (
+            instance.document.url if instance.document else None
+        )
+        representation['officialNewspaper'] = (
+            instance.officialNewspaper.url if instance.officialNewspaper else None
+        )
+        representation['introductionLetter'] = (
+            instance.introductionLetter.url if instance.introductionLetter else None
+        )
+        representation['referral_code'] = instance.referral_code
+        if instance.referred_by:
+            representation['referred_by'] = {
+                'id': instance.referred_by.id,
+                'username': instance.referred_by.username,
+                'referral_code': instance.referred_by.referral_code,
+            }
+        else:
+            representation['referred_by'] = None
+        representation['referral_count'] = instance.referral_count
+
+        # Include user's messages
+        representation['messages'] = MessageSerializer(instance.messages.all(), many=True).data
+        return representation
         
 
 
