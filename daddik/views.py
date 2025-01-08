@@ -1,9 +1,8 @@
-from django.shortcuts import render
 from rest_framework.response import Response
 from rest_framework.viewsets import ViewSet
 from rest_framework import viewsets , status
-from .models import User , Message
-from django.conf import settings
+from .models import User , Message , UserSubscription , SubscriptionPlan
+from django.utils.timezone import now
 from .serializers import ProfitCalculatorSerializer , MessageSerializer
 from .tax_calculator import (
     calculate_income_tax,
@@ -29,12 +28,14 @@ from .tax_calculator import (
     calculate_correction_penalty,
     calculate_quarterly_tax,
     calculate_annual_tax,
-    calculate_payment_delay_penalty,
+    calculate_payment_delay_penalty,   
 )
 from rest_framework.permissions import AllowAny , IsAuthenticated
 from rest_framework import generics
 from rest_framework.views import APIView
 from .serializers import UserSerializer , AllUsers
+from datetime import timedelta
+
 
 # Create your views here.
 class CreateUserView(generics.CreateAPIView):
@@ -47,36 +48,53 @@ class UserListView(viewsets.ModelViewSet):
     queryset = User.objects.all() 
     serializer_class = AllUsers
 
-class MessageListCreateView(APIView):
-    permission_classes = [IsAuthenticated]  # Ensure user is authenticated
+class SendMessageView(generics.CreateAPIView):
+    queryset = Message.objects.all()
+    serializer_class = MessageSerializer
+    permission_classes = [IsAuthenticated]
+
+    def create(self, request, *args, **kwargs):
+        recipient_id = request.data.get('recipient')
+        body = request.data.get('body')
+
+        if recipient_id == request.user.id :
+            return Response(
+                            {'error' : 'You can not message to yourself !'}, 
+                            status=status.HTTP_400_BAD_REQUEST
+                        )
+        
+        try:
+            recipient = User.objects.get(id=recipient_id)
+        except User.DoesNotExist:
+            return Response(
+                {'error': 'Recipient does not exist'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        message = Message.objects.create(
+            recipient=recipient,
+            body=body
+        )
+        return Response(
+            {
+                'id': message.id,
+                'recipient': recipient.username,
+                'body': message.body,
+                'read' : message.read ,
+                'created_at': message.created_at
+            },
+            status=status.HTTP_201_CREATED
+        )
+
+class GetUserMessagesView(APIView):
+    permission_classes = [IsAuthenticated] 
 
     def get(self, request):
-        """Retrieve messages for the authenticated user."""
-        messages = Message.objects.filter(recipient=request.user)
+        user = request.user
+        messages = Message.objects.filter(recipient=user)
         serializer = MessageSerializer(messages, many=True)
-        return Response(serializer.data)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
-    def post(self, request):
-        """Send a message to a recipient."""
-        serializer = MessageSerializer(data=request.data)
-
-        if serializer.is_valid():
-            recipient = serializer.validated_data.get('recipient')
-
-            # Prevent sending messages to self
-            if recipient == request.user:
-                return Response(
-                    {"error": "You cannot send a message to yourself."},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-
-            # Automatically set the sender to the admin user
-            admin_user = settings.AUTH_USER_MODEL.objects.get(id=43)  # Replace with your admin user logic
-            message = serializer.save(sender=admin_user)
-
-            return Response(MessageSerializer(message).data, status=status.HTTP_201_CREATED)
-
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class UserDashboardView(APIView):
     permission_classes = [IsAuthenticated]
@@ -85,6 +103,29 @@ class UserDashboardView(APIView):
         user = request.user
         serializer = UserSerializer(user)
         return Response(serializer.data, status=200)
+    
+class ChangeSubscriptionPlanView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        plan_name = request.data.get('plan')
+
+        try:
+            plan = SubscriptionPlan.objects.get(name=plan_name)
+        except SubscriptionPlan.DoesNotExist:
+            return Response({'error': 'Invalid plan name'}, status=status.HTTP_400_BAD_REQUEST)
+
+        user_subscription = user.subscription
+        user_subscription.plan = plan
+        user_subscription.end_date = now() + timedelta(plan.duration)
+        user_subscription.save()
+
+        return Response({
+            'message': f'Successfully changed to {plan.name.capitalize()} plan',
+            'plan': plan.name,
+            'end_date': user_subscription.end_date
+        }, status=status.HTTP_200_OK)
 
 #ONLINE CALCULATOR
 class ProfitCalculatorViewSet(ViewSet):

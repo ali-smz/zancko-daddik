@@ -1,29 +1,62 @@
 from rest_framework import serializers
 from .models import User , Message
+from django.utils.timezone import now
+from .models import SubscriptionPlan , UserSubscription
+from datetime import timedelta
 
-
-
-class AllUsers(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = '__all__'  
 
 
 class MessageSerializer(serializers.ModelSerializer):
      class Meta:
         model = Message
-        fields = ['id', 'sender', 'recipient', 'body', 'created_at']
-        read_only_fields = ['id', 'sender', 'created_at']
+        fields = '__all__'
+
+
+class AllUsers(serializers.ModelSerializer):
+    messages = MessageSerializer(many=True, read_only=True)
+    subscription = serializers.SerializerMethodField() 
+    class Meta:
+        model = User
+        fields = '__all__'  
+    
+    def get_subscription(self, instance):
+        if hasattr(instance, 'subscription'):
+            return {
+                'plan': instance.subscription.plan.name,
+                'start_date': instance.subscription.start_date,
+                'end_date': instance.subscription.end_date,
+                'is_active': instance.subscription.is_active()
+            }
+        return None
 
 
 class UserSerializer(serializers.ModelSerializer):
+    referral_code = serializers.ReadOnlyField()  # Ensure referral code is not user-editable
+    referred_by_code = serializers.CharField(write_only=True, required=False)
     messages = MessageSerializer(many=True, read_only=True)
+    subscription = serializers.SerializerMethodField() 
     class Meta:
         model = User
         fields = '__all__'
         extra_kwargs = { 'password': {'write_only': True} }
 
+    def get_subscription(self, instance):
+        if hasattr(instance, 'subscription'):
+            return {
+                'plan': instance.subscription.plan.name,
+                'start_date': instance.subscription.start_date,
+                'end_date': instance.subscription.end_date,
+                'is_active': instance.subscription.is_active()
+            }
+        return None
+
     def create(self, validated_data):
+        try:
+            default_plan = SubscriptionPlan.objects.get(name='free')
+        except SubscriptionPlan.DoesNotExist:
+            raise serializers.ValidationError("The 'free' subscription plan is missing.")
+        
+        referred_by_code = validated_data.pop('referred_by_code', None)
         user = User.objects.create_user(
             username=validated_data['username'],
             password=validated_data['password'],
@@ -53,40 +86,55 @@ class UserSerializer(serializers.ModelSerializer):
             billsNumber=validated_data.get('billsNumber', 0),
             isPremium=validated_data.get('isPremium', False),
         )
-        return user
 
+        UserSubscription.objects.create(
+            user=user,
+            plan=default_plan,
+            start_date=now(),
+            end_date=now() + timedelta(default_plan.duration)
+        )
+
+
+        if referred_by_code:
+            try:
+                referrer = User.objects.get(referral_code=referred_by_code)
+                user.referred_by = referrer
+                user.save()
+
+                referrer.referral_count += 1
+                referrer.save()
+            except User.DoesNotExist:
+                pass  
+
+        return user
+    
     def to_representation(self, instance):
-        return {
-            'id': instance.id,
-            'username': instance.username,
-            'name': instance.name,
-            'lastName': instance.lastName,
-            'profilePicture': instance.profilePicture.url if instance.profilePicture else None,
-            'lable': instance.lable,
-            'job': instance.job,
-            'national_code': instance.national_code,
-            'address': instance.address,
-            'workNumber': instance.workNumber,
-            'role': instance.role,
-            'companyName': instance.companyName,
-            'companyNationalId': instance.companyNationalId,
-            'document': instance.document.url if instance.document else None,
-            'officialNewspaper': instance.officialNewspaper.url if instance.officialNewspaper else None,
-            'companyWebsite': instance.companyWebsite,
-            'companyEmail': instance.companyEmail,
-            'connectorName': instance.connectorName,
-            'connectorLastname': instance.connectorLastname,
-            'connectorNationalCode': instance.connectorNationalCode,
-            'connectorPhoneNumber': instance.connectorPhoneNumber,
-            'connectorRole': instance.connectorRole,
-            'introductionLetter': instance.introductionLetter.url if instance.introductionLetter else None,
-            'stars': instance.stars,
-            'searchs': instance.searchs,
-            'billsNumber': instance.billsNumber,
-            'isPremium': instance.isPremium,
-            'createdAt': instance.createdAt,
-            'updatedAt': instance.updatedAt,
-        }
+        representation = super().to_representation(instance)
+        representation['profilePicture'] = (
+            instance.profilePicture.url if instance.profilePicture else None
+        )
+        representation['document'] = (
+            instance.document.url if instance.document else None
+        )
+        representation['officialNewspaper'] = (
+            instance.officialNewspaper.url if instance.officialNewspaper else None
+        )
+        representation['introductionLetter'] = (
+            instance.introductionLetter.url if instance.introductionLetter else None
+        )
+        representation['referral_code'] = instance.referral_code
+        if instance.referred_by:
+            representation['referred_by'] = {
+                'id': instance.referred_by.id,
+                'username': instance.referred_by.username,
+                'referral_code': instance.referred_by.referral_code,
+            }
+        else:
+            representation['referred_by'] = None
+        representation['referral_count'] = instance.referral_count
+
+        representation['messages'] = MessageSerializer(instance.messages.all(), many=True).data
+        return representation
         
 
 
