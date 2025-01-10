@@ -1,7 +1,7 @@
 from rest_framework.response import Response
 from rest_framework.viewsets import ViewSet
 from rest_framework import viewsets , status
-from .models import User , Message , UserSubscription , SubscriptionPlan
+from .models import User , Message , UserSubscription , SubscriptionPlan , Task
 from django.utils.timezone import now
 from .serializers import ProfitCalculatorSerializer , MessageSerializer
 from .tax_calculator import (
@@ -33,7 +33,7 @@ from .tax_calculator import (
 from rest_framework.permissions import AllowAny , IsAuthenticated
 from rest_framework import generics
 from rest_framework.views import APIView
-from .serializers import UserSerializer , AllUsers
+from .serializers import UserSerializer , AllUsers , TaskSerializer
 from datetime import timedelta
 
 
@@ -126,6 +126,14 @@ class ChangeSubscriptionPlanView(APIView):
             'plan': plan.name,
             'end_date': user_subscription.end_date
         }, status=status.HTTP_200_OK)
+    
+
+class TaskViewList(viewsets.ModelViewSet):
+    serializer_class = TaskSerializer
+    permission_classes = [IsAuthenticated]
+    def get_queryset(self):
+        return Task.objects.filter(user=self.request.user)
+
 
 #ONLINE CALCULATOR
 class ProfitCalculatorViewSet(ViewSet):

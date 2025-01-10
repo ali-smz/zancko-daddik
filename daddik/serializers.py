@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from .models import User , Message
 from django.utils.timezone import now
-from .models import SubscriptionPlan , UserSubscription
+from .models import SubscriptionPlan , UserSubscription , Task
 from datetime import timedelta
 
 
@@ -15,6 +15,7 @@ class MessageSerializer(serializers.ModelSerializer):
 class AllUsers(serializers.ModelSerializer):
     messages = MessageSerializer(many=True, read_only=True)
     subscription = serializers.SerializerMethodField() 
+    task_count = serializers.SerializerMethodField()
     class Meta:
         model = User
         fields = '__all__'  
@@ -28,6 +29,9 @@ class AllUsers(serializers.ModelSerializer):
                 'is_active': instance.subscription.is_active()
             }
         return None
+    
+    def get_task_count(self , instance) : 
+        return instance.tasks.filter(completed=False).count()
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -35,6 +39,7 @@ class UserSerializer(serializers.ModelSerializer):
     referred_by_code = serializers.CharField(write_only=True, required=False)
     messages = MessageSerializer(many=True, read_only=True)
     subscription = serializers.SerializerMethodField() 
+    task_count = serializers.SerializerMethodField()
     class Meta:
         model = User
         fields = '__all__'
@@ -49,6 +54,10 @@ class UserSerializer(serializers.ModelSerializer):
                 'is_active': instance.subscription.is_active()
             }
         return None
+    
+    def get_task_count(self , instance) :
+        return instance.tasks.filter(completed = False).count()
+    
 
     def create(self, validated_data):
         try:
@@ -136,6 +145,15 @@ class UserSerializer(serializers.ModelSerializer):
         representation['messages'] = MessageSerializer(instance.messages.all(), many=True).data
         return representation
         
+
+class TaskSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Task
+        fields = ['id', 'title', 'description', 'deadline', 'completed', 'created_at', 'updated_at']
+
+    def create(self, validated_data):
+        user = self.context['request'].user
+        return Task.objects.create(user=user, **validated_data) 
 
 
 
