@@ -1,10 +1,13 @@
 import pandas as pd
-data = pd.read_csv(r"D:\Python\Functions\Data_Calc.csv")
+
+
+data = pd.read_csv("Data_Calc.csv")
 Insurance_rates = data.loc[data["sub"]=='Insurance rates' , 'value'].iloc[0]
 base_insurance_salary = data.loc[data["sub"]=='base insurance salary' , 'value'].iloc[0]
 right_treatment = data.loc[data["sub"]=='right treatment' , 'value'].iloc[0]
 right_housing = data.loc[data["sub"]=='right housing' , 'value'].iloc[0]
 Pension_ceiling = data.loc[data["sub"]=='Pension ceiling' , 'value'].iloc[0]
+print(data.head())
 #وبیمه رانندگان و مشاغل خاص و بیمه مشاغل آزاد
 def self_empleyed_insurance(rate,salary):
     return right_treatment+(rate * salary)

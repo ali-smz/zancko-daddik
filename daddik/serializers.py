@@ -188,3 +188,25 @@ class ProfitCalculatorSerializer(serializers.Serializer):
     salary_exemption = serializers.BooleanField(required=False, default=False)
     
 
+
+class LaborLawCalculatorSerializer(serializers.Serializer):
+    salary = serializers.IntegerField(required=False, default=0)
+    hourscount = serializers.IntegerField(required=False, default=0)
+    salaryvalueperhour = serializers.IntegerField(required=False, default=0)
+    shiftvalue = serializers.IntegerField(required=False, default=0)
+    salaryvaluepermounth = serializers.IntegerField(required=False, default=0)
+    basicsalaryvaluepermounth = serializers.IntegerField(required=False, default=0) 
+    workedmonth = serializers.IntegerField(required=False, default=0)
+    percentageOFbonus = serializers.IntegerField(required=False, default=0) 
+    workedmounthcount = serializers.IntegerField(required=False, default=0)
+    totaldays = serializers.IntegerField(required=False, default=0) 
+    salaryvalueperday = serializers.IntegerField(required=False, default=0)
+    realtime = serializers.IntegerField(required=False, default=0)
+    legaltime = serializers.IntegerField(required=False, default=0) 
+    approvedvalue = serializers.IntegerField(required=False, default=0)    
+    salaryvaluepermonth = serializers.IntegerField(required=False, default=0)
+    totalmonth = serializers.IntegerField(required=False, default=0)  
+    oip = serializers.IntegerField(required=False, default=0)
+    remainingTime = serializers.IntegerField(required=False, default=0) 
+    Arrears = serializers.IntegerField(required=False, default=0) 
+    marriedOrnot = serializers.BooleanField(required=False, default=False)

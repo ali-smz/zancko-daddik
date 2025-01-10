@@ -1,7 +1,7 @@
-
+ 
 #حقوق پایه بر اساس ساعت کاری
-def Basic_salary_based_on_working_hours(Salary):
-    r = Salary/44
+def Basic_salary_based_on_working_hours(salary):
+    r = salary/44
     return r
 
 #اضافه‌کاری 
@@ -32,7 +32,7 @@ def eid(basicsalaryvaluepermounth,workedmonth):
 
 #پاداش عملکرد
 def performance_bonus(basicsalaryvaluepermounth,percentageOFbonus):
-    return basicsalaryvaluepermounth * percentageOFbonus
+    return basicsalaryvaluepermounth * (percentageOFbonus / 100)
 
 #محاسبه سنوات پایان کار
 def years_of_work(basicsalaryvaluepermounth,workedmounthcount):
@@ -49,18 +49,14 @@ def Salary_for_leave_without(totaldays,salaryvalueperday):
 
 #مرخصی استعلاجی
 def sick_leave(marriedOrnot,totaldays,salaryvalueperday):
-    if marriedOrnot == "Married":
+    if marriedOrnot :
         r = totaldays * salaryvalueperday * 0.75
-        return r
-    elif marriedOrnot == "Not married":
+    else :
         r = totaldays * salaryvalueperday * 0.6666
-        return r
-    else:
-        return "Not Included"
+    return r
 
 
 #کمک‌هزینه ایاب‌وذهاب
-
 def Travel_allowance(realtime,legaltime,approvedvalue):
     r = approvedvalue * (realtime/legaltime)
     return r
@@ -81,7 +77,7 @@ def Late_payment_crimes(salaryvaluepermonth,totaldays):
     payment_crime2 = salaryvaluepermonth * 0.015
     r1 = totaldays * payment_crime
     r2 = totaldays * payment_crime2
-    return  rf"عیدی محاسبه شده بین {r1} و {r2} است"
+    return  rf"جریمه محاسبه شده بین {r1} و {r2} است"
 
 #محاسبه جریمه بیمه معوقه
 def Overdue_insurance_penalty(oip,totalmonth):

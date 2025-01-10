@@ -3,7 +3,7 @@ from rest_framework.viewsets import ViewSet
 from rest_framework import viewsets , status
 from .models import User , Message , UserSubscription , SubscriptionPlan , Task
 from django.utils.timezone import now
-from .serializers import ProfitCalculatorSerializer , MessageSerializer
+from .serializers import ProfitCalculatorSerializer , MessageSerializer , LaborLawCalculatorSerializer
 from .tax_calculator import (
     calculate_income_tax,
     calculate_corporate_tax,
@@ -29,6 +29,24 @@ from .tax_calculator import (
     calculate_quarterly_tax,
     calculate_annual_tax,
     calculate_payment_delay_penalty,   
+)
+from .LaborLawCalculators import (
+    Basic_salary_based_on_working_hours,
+    Overtime_And_workOnPublicHolidays,
+    nightwork,
+    shift_right,
+    eid,
+    performance_bonus,
+    years_of_work,
+    unused_paid_leave,
+    Salary_for_leave_without,
+    sick_leave,
+    Travel_allowance,
+    Housing_allowance,
+    Grocery_allowance,
+    Late_payment_crimes,
+    Overdue_insurance_penalty,
+    Compensation_for_contract_termination
 )
 from rest_framework.permissions import AllowAny , IsAuthenticated
 from rest_framework import generics
@@ -168,7 +186,7 @@ class ProfitCalculatorViewSet(ViewSet):
                 'total_annual_income': ('annual_tax', lambda x: calculate_annual_tax(x, data.get('paid_taxes', 0))),
             }
 
-            # Calculate taxes for relevant fields
+
             for field, (response_key, calc_method) in tax_fields.items():
                 value = data.get(field, 0)
                 if value and calc_method:
@@ -192,4 +210,54 @@ class ProfitCalculatorViewSet(ViewSet):
     
 
     
-    
+class LaborLawCalculatorViewSet(ViewSet):
+    def create(self , request):
+        serializer = LaborLawCalculatorSerializer(data=request.data)
+        if serializer.is_valid():
+            data = serializer.validated_data
+            response_data = {}
+            
+            if data.get('salary') > 0 :
+                response_data['basic_salary'] = Basic_salary_based_on_working_hours(data['salary'])
+
+            elif data.get("hourscount") > 0 and data.get("salaryvalueperhour") > 0:
+                response_data['overtime_amount'] = Overtime_And_workOnPublicHolidays(data["salaryvalueperhour"] , data['hourscount'])
+                response_data['night_shift_amount'] = nightwork(data["salaryvalueperhour"] , data['hourscount'])
+
+            elif data.get("hourscount") > 0 and data.get("salaryvaluepermounth") > 0 and data.get("shiftvalue") > 0:
+                response_data['shift_right'] = shift_right(data["salaryvaluepermounth"] , data['shiftvalue'] , data['hourscount'])
+                
+            elif data.get("basicsalaryvaluepermounth") > 0 and data.get("workedmonth") > 0:
+                response_data['eid_amount'] = eid(data["basicsalaryvaluepermounth"] , data['workedmonth'])
+
+            elif data.get("percentageOFbonus") > 0 and data.get("basicsalaryvaluepermounth") > 0:
+                response_data['performance_bonus_amount'] = performance_bonus(data["basicsalaryvaluepermounth"] , data['percentageOFbonus'])
+
+            elif data.get("basicsalaryvaluepermounth") > 0 and data.get("workedmounthcount") > 0:
+                response_data['years_of_work_amount'] = years_of_work(data["basicsalaryvaluepermounth"] , data['workedmounthcount'])
+
+            elif data.get("totaldays") > 0 and data.get("salaryvalueperday") > 0:
+                response_data['unused_paid_leave'] = unused_paid_leave(data["salaryvalueperday"] , data['totaldays'])
+                response_data['Salary_for_leave_without'] = Salary_for_leave_without(data["salaryvalueperday"] , data['totaldays'])
+
+            elif data.get("marriedOrnot") and data.get("totaldays") > 0 and data.get("salaryvalueperday") > 0:
+                response_data['sick_leave_days'] = sick_leave(data["marriedOrnot"] , data['totaldays'] , data['salaryvalueperday'])
+
+            elif data.get("realtime") > 0 and data.get("legaltime") > 0 and data.get("approvedvalue") > 0:
+                response_data['travel_allowance_amount'] = Travel_allowance(data["realtime"] , data["legaltime"] , data['approvedvalue'])
+                response_data['grocery_allowance_amount'] = Grocery_allowance(data["realtime"] , data["legaltime"] , data['approvedvalue'])
+           
+            elif data.get("salaryvaluepermonth") > 0 and data.get("totaldays") > 0:
+                response_data['late_payment_crimes_amount'] = Late_payment_crimes(data["salaryvaluepermonth"] , data['totaldays'])
+
+            elif data.get("oip") > 0 and data.get("totalmonth") > 0:
+                response_data['overdue_insurance_penalty_amount'] = Overdue_insurance_penalty(data["oip"] , data['totalmonth'])
+
+            elif data.get("salaryvaluepermonth") > 0 and data.get("remainingTime") > 0 and data.get("Arrears"):
+                response_data['compensation_for_contract_termination_amount'] = Compensation_for_contract_termination(data['remainingTime'] , data['salaryvaluepermonth'] , data["Arrears"])
+            
+            return Response(response_data, status=status.HTTP_200_OK)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                                                            
+
