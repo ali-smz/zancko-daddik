@@ -3,6 +3,7 @@ from .models import User , Message
 from django.utils.timezone import now
 from .models import SubscriptionPlan , UserSubscription , Task
 from datetime import timedelta
+from rest_framework_simplejwt.tokens import RefreshToken
 
 
 
@@ -114,7 +115,12 @@ class UserSerializer(serializers.ModelSerializer):
                 referrer.save()
             except User.DoesNotExist:
                 pass  
-
+        
+        refresh = RefreshToken.for_user(user)
+        self.context['tokens'] = {
+            'refresh': str(refresh),
+            'access': str(refresh.access_token),
+        }
         return user
     
     def to_representation(self, instance):
@@ -215,7 +221,7 @@ class LaborLawCalculatorSerializer(serializers.Serializer):
 class SocialSecurityCalculatorSerializer(serializers.Serializer):
     salary = serializers.IntegerField(required=False, default=0)
     rate = serializers.IntegerField(required=False, default=0)
-    Variable_benefits = serializers.IntegerField(required=False, default=0)
+    variable_benefits = serializers.IntegerField(required=False, default=0)
     workHistory = serializers.IntegerField(required=False, default=0)
     countUnderTutelage = serializers.IntegerField(required=False, default=0)
     average_salary_inPast90days = serializers.IntegerField(required=False, default=0) 

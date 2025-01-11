@@ -13,8 +13,8 @@ def self_empleyed_insurance(rate,salary):
     return right_treatment + (rate * salary)
 
 #بیمه کارگران
-def workers_insurance(Variable_benefits = 0):
-    total = right_housing + right_treatment + base_insurance_salary + Variable_benefits
+def workers_insurance(variable_benefits = 0):
+    total = right_housing + right_treatment + base_insurance_salary + variable_benefits
     rt = total * 0.30
     rworker = total * 0.07
     remployer = total * 0.2
@@ -58,7 +58,6 @@ def unemployment_insurance(workHistory,MarriedOrNot,countUnderTutelage,average_s
     r1 = average_salary_inPast90days * 0.55
     r2 = 0.1 * countUnderTutelage * average_salary_inPast90days
     rt = r1 + r2
-
     return {
         'rt' : rt ,
         'period' : period
@@ -93,5 +92,3 @@ def Insured_share(treatment_cost,insured_share,peyment_ceiling):
 #پاداش پایان خدمت
 def termination_bonus(lastmonthsalary,yearsofWork):
     return lastmonthsalary * yearsofWork
-
-
