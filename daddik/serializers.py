@@ -210,3 +210,22 @@ class LaborLawCalculatorSerializer(serializers.Serializer):
     remainingTime = serializers.IntegerField(required=False, default=0) 
     Arrears = serializers.IntegerField(required=False, default=0) 
     marriedOrnot = serializers.BooleanField(required=False, default=False)
+
+
+class SocialSecurityCalculatorSerializer(serializers.Serializer):
+    salary = serializers.IntegerField(required=False, default=0)
+    rate = serializers.IntegerField(required=False, default=0)
+    Variable_benefits = serializers.IntegerField(required=False, default=0)
+    workHistory = serializers.IntegerField(required=False, default=0)
+    countUnderTutelage = serializers.IntegerField(required=False, default=0)
+    average_salary_inPast90days = serializers.IntegerField(required=False, default=0) 
+    avaragelast2yearsSalary = serializers.IntegerField(required=False, default=0)
+    insurance_history = serializers.IntegerField(required=False, default=0) 
+    right_insurance = serializers.IntegerField(required=False, default=0)
+    monthdelay = serializers.IntegerField(required=False, default=0) 
+    treatment_cost = serializers.IntegerField(required=False, default=0)
+    insured_share = serializers.IntegerField(required=False, default=0)
+    peyment_ceiling = serializers.IntegerField(required=False, default=0) 
+    lastmonthsalary = serializers.IntegerField(required=False, default=0)    
+    yearsofWork = serializers.IntegerField(required=False, default=0)
+    marriedOrnot = serializers.BooleanField(required=False, default=False)
