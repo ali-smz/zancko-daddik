@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     #local 
     'daddik',
     'calculator',
+    'search_engine',
     #3rd party 
     'rest_framework',
     'rest_framework.authtoken',
