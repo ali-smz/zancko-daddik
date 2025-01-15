@@ -3,9 +3,9 @@ from rest_framework import routers
 
 router = routers.DefaultRouter()
 
-router.register('/tax', ProfitCalculatorViewSet, basename='tax-calculator')
-router.register('/labor', LaborLawCalculatorViewSet, basename='labor-calculator')
-router.register('/social', SocialSecurityculatorViewSet, basename='social-security-calculator')
+router.register('tax', ProfitCalculatorViewSet, basename='tax-calculator')
+router.register('labor', LaborLawCalculatorViewSet, basename='labor-calculator')
+router.register('social', SocialSecurityculatorViewSet, basename='social-security-calculator')
 
 
 
