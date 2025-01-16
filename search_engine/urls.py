@@ -3,5 +3,5 @@ from .views import DocumentCreateAPIView, DocumentSearchAPIView
 
 urlpatterns = [
     path('documents/', DocumentCreateAPIView.as_view(), name='create-document'),
-    path('search/', DocumentSearchAPIView.as_view(), name='search-documents'),
+    path('', DocumentSearchAPIView.as_view(), name='search-documents'),
 ]

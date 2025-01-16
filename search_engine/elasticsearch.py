@@ -1,5 +1,7 @@
 from elasticsearch_dsl import Document, Text, Date
 from elasticsearch_dsl.connections import connections
+from elasticsearch_dsl.query import MultiMatch
+
 
 # Connect to Elasticsearch
 connections.create_connection(hosts=['http://192.168.1.155:9200/'])
@@ -28,4 +30,5 @@ def index_document(instance):
 
 # Function to search documents
 def search_documents(query):
-    return DocumentIndex.search().query("multi_match", query=query, fields=['title', 'description'])
+    q = MultiMatch(query=query , fields=['title', 'description'] , fuzziness="AUTO" )
+    return DocumentIndex.search().query(q)
