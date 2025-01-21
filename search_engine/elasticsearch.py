@@ -3,10 +3,10 @@ from elasticsearch_dsl.connections import connections
 from elasticsearch_dsl.query import MultiMatch
 
 
-# Connect to Elasticsearch
-connections.create_connection(hosts=['http://192.168.1.155:9200/'])
 
-# Define an Elasticsearch Index
+connections.create_connection(hosts=['http://192.168.1.37:9200/'])
+
+
 class DocumentIndex(Document):
     title = Text()
     description = Text()
@@ -15,13 +15,13 @@ class DocumentIndex(Document):
     class Index:
         name = 'documents'
 
-# Initialize the index
 DocumentIndex.init()
 
 # Function to index a document  
 def index_document(instance):
     obj = DocumentIndex(
         meta={'id': instance.id},
+        id = instance.id ,
         title=instance.title,
         description=instance.description,
         created_at=instance.created_at,
