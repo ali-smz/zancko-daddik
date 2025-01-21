@@ -19,7 +19,7 @@ services:
       - elasticsearch
     environment:
       DEBUG: '1'
-      DJANGO_SETTINGS_MODULE: 'your_project.settings'
+      DJANGO_SETTINGS_MODULE: 'config.settings'
       DATABASE_URL: 'postgres://postgres:postgres@postgres:5432/postgres'
       ELASTICSEARCH_HOST: 'http://elasticsearch:9200'
 
