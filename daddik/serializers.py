@@ -118,6 +118,7 @@ class UserSerializer(serializers.ModelSerializer):
         
         if user.is_active:
             refresh = RefreshToken.for_user(user)
+    
         self.context['tokens'] = {
             'refresh': str(refresh),
             'access': str(refresh.access_token),
