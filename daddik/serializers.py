@@ -116,9 +116,7 @@ class UserSerializer(serializers.ModelSerializer):
             except User.DoesNotExist:
                 pass  
         
-        if user.is_active:
-            refresh = RefreshToken.for_user(user)
-    
+        refresh = RefreshToken.for_user(user)
         self.context['tokens'] = {
             'refresh': str(refresh),
             'access': str(refresh.access_token),
