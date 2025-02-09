@@ -1,3 +1,5 @@
+from django.conf import settings
+
 def calculate_income_tax(salary):
     
     if salary <= 56000000: 
@@ -31,16 +33,4 @@ def calculate_contractor_tax(contract_value):
 
 
 if __name__ == "__main__":
-    print("محاسبه مالیات بر درآمد در ایران")
-    salary = int(input("حقوق ماهانه (ریال): "))
-    corporate_profit = int(input("سود شرکت (ریال): "))
-    personal_profit = int(input("سود مشاغل حقیقی (ریال): "))
-    dividend = int(input("سود سهام (ریال): "))
-    contract_value = int(input("ارزش قرارداد پیمانکاری (ریال): "))
-
-    print("\nنتایج:")
-    print(f"مالیات حقوق: {calculate_income_tax(salary):,} ریال")
-    print(f"مالیات مشاغل حقوقی: {calculate_corporate_tax(corporate_profit):,} ریال")
-    print(f"مالیات مشاغل حقیقی: {calculate_personal_business_tax(personal_profit):,} ریال")
-    print(f"مالیات سود سهام: {calculate_dividend_tax(dividend):,} ریال")
-    print(f"مالیات پیمانکاری: {calculate_contractor_tax(contract_value):,} ریال")
+    print(settings.ELASTICSEARCH_DSL)

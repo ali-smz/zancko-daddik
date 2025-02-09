@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 from pathlib import Path
 from datetime import timedelta
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -143,6 +144,16 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.TokenAuthentication',
     ],
 }
+
+
+
+ELASTICSEARCH_DSL = {
+    'default': {
+        'hosts': "http://elastic:QGcYXqgaCMOqnxBrtJqZzXkh@el-capitan.liara.cloud:32020/",
+    },
+}
+
+# print(f"ELASTICSEARCH_URI: {os.getenv('ELASTICSEARCH_URI')}")
 
 
 SIMPLE_JWT = {

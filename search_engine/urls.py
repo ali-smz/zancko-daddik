@@ -1,7 +1,6 @@
 from django.urls import path
-from .views import DocumentCreateAPIView, DocumentSearchAPIView
+from .views import elasticsearch_insert_read
 
 urlpatterns = [
-    path('documents/', DocumentCreateAPIView.as_view(), name='create-document'),
-    path('', DocumentSearchAPIView.as_view(), name='search-documents'),
+    path('', elasticsearch_insert_read, name='elasticsearch_insert_read'),
 ]
