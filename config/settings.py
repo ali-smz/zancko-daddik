@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     #3rd party 
     'rest_framework',
     'rest_framework.authtoken',
+    "corsheaders",
 ]
 
 
@@ -54,6 +55,8 @@ MIDDLEWARE = [
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
+    "corsheaders.middleware.CorsMiddleware",
+    "django.middleware.common.CommonMiddleware",
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -166,6 +169,11 @@ SIMPLE_JWT = {
 
 AUTH_USER_MODEL = 'daddik.User'
 
+CORS_ALLOWED_ORIGINS = [
+    "https://legaldadik.ir",
+    "https://api.legaldadik.ir",
+    "http://localhost:3000",
+    "http://127.0.0.1:8000",
+]
 
-ALLOWED_HOSTS = ['127.0.0.1' , "https://legaldadik.ir"]
 
