@@ -24,7 +24,7 @@ class User(AbstractBaseUser):
     ]
 
     lable = models.CharField(max_length=20, choices=STATUS_CHOICES, default='unknown')
-    username = models.CharField(max_length=11, unique=True)
+    username = models.CharField(max_length=50 ,unique=True)
     password = models.CharField(max_length=50, validators=[MinLengthValidator(8)])
     profilePicture = models.FileField(upload_to='uploads/images', blank=True)
     name = models.CharField(max_length=50, blank=True)
