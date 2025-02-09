@@ -51,6 +51,6 @@ class ElasticModel:
     def insert_data(self, data):
         self.client.index(index=self.index, document=data)
 
-    def read_data(self):
-        response = self.client.search(index=self.index, body={"query": {"match_all": {}}})
+    def search_data(self, query):
+        response = self.client.search(index=self.index, body={"query": {"match": query}})
         return response['hits']['hits']
