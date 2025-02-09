@@ -4,7 +4,7 @@ from elasticsearch_dsl.query import MultiMatch
 
 
 
-connections.create_connection(hosts=['http://192.168.1.37:9200/'])
+connections.create_connection(hosts=['http://192.168.30.6:9200'])
 
 
 class DocumentIndex(Document):

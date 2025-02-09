@@ -1,49 +1,29 @@
 version: '3.9'
 
 services:
-  web:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: django-app
-    command: >
-      sh -c "python manage.py migrate &&
-             python manage.py runserver 0.0.0.0:8000"
-    volumes:
-      - .:/app
-      - /app/staticfiles
-    ports:
-      - "8000:8000"
-    depends_on:
-      - postgres
-      - elasticsearch
-    environment:
-      DEBUG: '1'
-      DJANGO_SETTINGS_MODULE: 'config.settings'
-      DATABASE_URL: 'postgres://postgres:postgres@postgres:5432/postgres'
-      ELASTICSEARCH_HOST: 'http://elasticsearch:9200'
-
-  postgres:
-    image: postgres:15
-    container_name: postgres
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: postgres
-    ports:
-      - "5432:5432"
-
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.10.1
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.0
     container_name: elasticsearch
     environment:
-      discovery.type: single-node
-      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+      - discovery.type=single-node
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
     ports:
-      - "9200:9200"
-      - "9300:9300"
-    ulimits:
-      memlock:
-        soft: -1
-        hard: -1
-    mem_limit: 1g
+      - 9200:9200
+      - 9300:9300
+    healthcheck:
+      test: curl -s http://localhost:9200/_cluster/health | grep -vq 'red'
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  django:
+    build: .
+    container_name: django
+    command: sh -c "sleep 20 && python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - .:/code
+    ports:
+      - 8000:8000
+    depends_on:
+      elasticsearch:
+        condition: service_healthy

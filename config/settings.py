@@ -154,3 +154,7 @@ SIMPLE_JWT = {
 
 
 AUTH_USER_MODEL = 'daddik.User'
+
+
+ALLOWED_HOSTS = ['127.0.0.1' , "https://legaldadik.ir"]
+
