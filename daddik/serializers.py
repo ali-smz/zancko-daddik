@@ -2,7 +2,6 @@ from rest_framework import serializers
 from .models import User , Message
 from django.utils.timezone import now
 from .models import SubscriptionPlan , UserSubscription , Task
-from datetime import timedelta
 from rest_framework_simplejwt.tokens import RefreshToken
 
 
@@ -97,14 +96,21 @@ class UserSerializer(serializers.ModelSerializer):
             isPremium=validated_data.get('isPremium', False),
         )
 
-        UserSubscription.objects.create(
+        # user.save()
+        # user = User.objects.get(id=user.id)
+
+        # print(f"Creating subscription for user: {user.id}, plan: {default_plan.name}")
+
+        user_subscription = UserSubscription.objects.create(
             user=user,
             plan=default_plan,
             start_date=now(),
-            end_date=now() + timedelta(default_plan.duration)
+            end_date=now() + default_plan.duration
         )
-
-
+        # print(f"Subscription created: {user_subscription}")
+        user.subscription = user_subscription
+        user.save()
+        
         if referred_by_code:
             try:
                 referrer = User.objects.get(referral_code=referred_by_code)

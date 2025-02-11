@@ -4,6 +4,7 @@ from django.db import models
 from django.core.validators import MinLengthValidator , MinValueValidator , MaxValueValidator
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.utils.timezone import now
+from django.conf import settings
 
 # Create your models here.
 class UserManager(BaseUserManager):
@@ -25,7 +26,7 @@ class User(AbstractBaseUser):
 
     lable = models.CharField(max_length=20, choices=STATUS_CHOICES, default='unknown')
     username = models.CharField(max_length=50 ,unique=True)
-    password = models.CharField(max_length=50, validators=[MinLengthValidator(8)])
+    password = models.CharField(max_length=200, validators=[MinLengthValidator(8)])
     profilePicture = models.FileField(upload_to='uploads/images', blank=True)
     name = models.CharField(max_length=50, blank=True)
     lastName = models.CharField(max_length=50, blank=True)
@@ -107,17 +108,15 @@ class SubscriptionPlan(models.Model):
 
     name = models.CharField(max_length=20, choices=PLAN_CHOICES, unique=True , default='free')
     price = models.DecimalField(max_digits=10, decimal_places=2)
-    duration = models.IntegerField(default=5) 
+    duration = models.DurationField() 
 
     def __str__(self):
         return f"{self.name.capitalize()} Plan - ${self.price}"
 
 
 class UserSubscription(models.Model):
-    user = models.OneToOneField(
-        User, on_delete=models.CASCADE, related_name="subscription"
-    )
-    plan = models.ForeignKey(SubscriptionPlan, on_delete=models.SET_NULL, null=True)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    plan = models.ForeignKey(SubscriptionPlan, on_delete=models.CASCADE)
     start_date = models.DateTimeField(auto_now_add=True)
     end_date = models.DateTimeField()
 

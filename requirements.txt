@@ -1,5 +1,6 @@
 asgiref==3.8.1
 certifi==2024.12.14
+dj-database-url==2.3.0
 Django==5.1.4
 django-cors-headers==4.7.0
 django-filter==24.3
@@ -12,8 +13,10 @@ Markdown==3.7
 numpy==2.2.1
 pandas==2.2.3
 psycopg2==2.9.10
+psycopg2-binary==2.9.10
 PyJWT==2.10.1
 python-dateutil==2.9.0.post0
+python-dotenv==1.0.1
 pytz==2024.2
 six==1.17.0
 sqlparse==0.5.3

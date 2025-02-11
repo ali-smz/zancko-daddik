@@ -6,7 +6,6 @@ from rest_framework.permissions import AllowAny , IsAuthenticated
 from rest_framework import generics
 from rest_framework.views import APIView
 from .serializers import UserSerializer , AllUsers , TaskSerializer , MessageSerializer
-from datetime import timedelta
 
 
 # Create your views here.
@@ -106,7 +105,7 @@ class ChangeSubscriptionPlanView(APIView):
 
         user_subscription = user.subscription
         user_subscription.plan = plan
-        user_subscription.end_date = now() + timedelta(plan.duration)
+        user_subscription.end_date = now() + plan.duration
         user_subscription.save()
 
         return Response({
