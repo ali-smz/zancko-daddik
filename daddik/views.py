@@ -1,6 +1,6 @@
 from rest_framework.response import Response
 from rest_framework import viewsets , status
-from .models import User , Message , SubscriptionPlan , Task
+from .models import User , Message , SubscriptionPlan , Task , UserSubscription
 from django.utils.timezone import now
 from rest_framework.permissions import AllowAny , IsAuthenticated
 from rest_framework import generics
@@ -103,7 +103,11 @@ class ChangeSubscriptionPlanView(APIView):
         except SubscriptionPlan.DoesNotExist:
             return Response({'error': 'Invalid plan name'}, status=status.HTTP_400_BAD_REQUEST)
 
-        user_subscription = user.subscription
+        user_subscription = UserSubscription.objects.filter(user=user).order_by('-end_date').first()
+
+        if not user_subscription:
+            return Response({'error': 'No active subscription found'}, status=status.HTTP_400_BAD_REQUEST)
+
         user_subscription.plan = plan
         user_subscription.end_date = now() + plan.duration
         user_subscription.save()
