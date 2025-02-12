@@ -29,6 +29,24 @@ class CreateUserView(generics.CreateAPIView):
             'user': serializer.data,
             'tokens': tokens
         }, status=status.HTTP_201_CREATED, headers=headers)
+    
+
+class UpdateUserView(generics.UpdateAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    permission_classes = [IsAuthenticated] 
+
+    def get_object(self):
+        return self.request.user
+
+    def update(self, request, *args, **kwargs):
+        user = self.get_object()
+        serializer = self.get_serializer(user, data=request.data, partial=True) 
+        serializer.is_valid(raise_exception=True)
+
+        serializer.save()
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class UserListView(viewsets.ModelViewSet):

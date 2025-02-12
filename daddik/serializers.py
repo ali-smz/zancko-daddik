@@ -35,7 +35,7 @@ class AllUsers(serializers.ModelSerializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
-    referral_code = serializers.ReadOnlyField()  # Ensure referral code is not user-editable
+    referral_code = serializers.ReadOnlyField()
     referred_by_code = serializers.CharField(write_only=True, required=False)
     messages = MessageSerializer(many=True, read_only=True)
     subscription = serializers.SerializerMethodField() 
@@ -46,12 +46,13 @@ class UserSerializer(serializers.ModelSerializer):
         extra_kwargs = { 'password': {'write_only': True} }
 
     def get_subscription(self, instance):
-        if hasattr(instance, 'subscription'):
+        subscription = instance.subscription.latest('end_date') if instance.subscription.exists() else None
+        if subscription:
             return {
-                'plan': instance.subscription.plan.name,
-                'start_date': instance.subscription.start_date,
-                'end_date': instance.subscription.end_date,
-                'is_active': instance.subscription.is_active()
+                'plan': subscription.plan.name,
+                'start_date': subscription.start_date,
+                'end_date': subscription.end_date,
+                'is_active': subscription.is_active()
             }
         return None
     
@@ -96,20 +97,15 @@ class UserSerializer(serializers.ModelSerializer):
             isPremium=validated_data.get('isPremium', False),
         )
 
-        # user.save()
-        # user = User.objects.get(id=user.id)
-
-        # print(f"Creating subscription for user: {user.id}, plan: {default_plan.name}")
-
         user_subscription = UserSubscription.objects.create(
             user=user,
             plan=default_plan,
             start_date=now(),
             end_date=now() + default_plan.duration
         )
-        # print(f"Subscription created: {user_subscription}")
-        user.subscription = user_subscription
-        user.save()
+
+        # user.subscription = user_subscription
+        # user.save()
         
         if referred_by_code:
             try:

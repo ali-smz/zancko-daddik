@@ -16,7 +16,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path , include
-from daddik.views import CreateUserView , UserDashboardView , SendMessageView , GetUserMessagesView , ChangeSubscriptionPlanView
+from daddik.views import CreateUserView , UserDashboardView , SendMessageView , GetUserMessagesView , ChangeSubscriptionPlanView , UpdateUserView
 from rest_framework_simplejwt.views import TokenObtainPairView , TokenRefreshView
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -27,6 +27,7 @@ urlpatterns = [
     path('api/token/', TokenObtainPairView.as_view() , name='get_token'),
     path('api/token/refresh/', TokenRefreshView.as_view() , name='refresh'),
     path('api/user/dashboard/', UserDashboardView.as_view(), name='user-dashboard'),
+    path('user/update/', UpdateUserView.as_view(), name='update_user'),
     path('api/send-messages/', SendMessageView.as_view(), name='send-message'),
     path('api/messages/', GetUserMessagesView.as_view(), name='my-messages'),
     path('api/subscription/', ChangeSubscriptionPlanView.as_view(), name='subscription'),
