@@ -51,6 +51,18 @@ class ElasticModel:
     def insert_data(self, data):
         self.client.index(index=self.index, document=data)
 
-    def search_data(self, query):
-        response = self.client.search(index=self.index, body={"query": {"match": query}})
+    def search_data(self, query, fields=None):
+        if fields is None:
+            fields = ["title", "description"]
+            
+        search_body = {
+            "query": {
+                "multi_match": {
+                    "query": query,
+                    "fields": fields,
+                    "fuzziness": "AUTO"
+                }
+            }
+        }
+        response = self.client.search(index=self.index, body=search_body)
         return response['hits']['hits']

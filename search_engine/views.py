@@ -56,7 +56,7 @@ def elasticsearch_insert_read(request):
     # Search data based on query parameters
     query = request.GET.get('q', '')
     if query:
-        results = es_model.search_data({'description': query})
+        results = es_model.search_data(query)
     else:
         results = []
     
