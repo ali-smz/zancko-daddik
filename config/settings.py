@@ -31,7 +31,7 @@ SECRET_KEY = 'django-insecure-1)pz7av(m96rpalz&_71d5e^$f%v)cy640ea@u(auttdq70!(n
 DEBUG = os.getenv('DEBUG' , 'False').lower() == 'true'
 
 
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS' , '').split(',')
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(',') if os.getenv('ALLOWED_HOSTS') else []
 
 
 # Application definition
@@ -147,11 +147,10 @@ REST_FRAMEWORK = {
 
 ELASTICSEARCH_DSL = {
     'default': {
-        'hosts': "http://elastic:QGcYXqgaCMOqnxBrtJqZzXkh@el-capitan.liara.cloud:32020/",
+        'hosts': os.getenv('ELASTICSEARCH_URI'),
     },
 }
 
-# print(f"ELASTICSEARCH_URI: {os.getenv('ELASTICSEARCH_URI')}")
 
 
 SIMPLE_JWT = {
@@ -165,9 +164,7 @@ SIMPLE_JWT = {
 
 CORS_ALLOWED_ORIGINS = [
     "https://legaldadik.ir",
-    "https://api.legaldadik.ir",
     "http://localhost:3000",
-    "http://127.0.0.1:8000",
 ]
 
 
