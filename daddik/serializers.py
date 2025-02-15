@@ -75,6 +75,7 @@ class UserSerializer(serializers.ModelSerializer):
             profilePicture=validated_data.get('profilePicture', None),
             lable=validated_data.get('lable', 'unknown'),
             job=validated_data.get('job', ''),
+            education=validated_data.get('education', ''),
             national_code=validated_data.get('national_code', None),
             address=validated_data.get('address', ''),
             workNumber=validated_data.get('workNumber', None),

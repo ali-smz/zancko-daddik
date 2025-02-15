@@ -31,6 +31,7 @@ class User(AbstractBaseUser):
     name = models.CharField(max_length=50, blank=True)
     lastName = models.CharField(max_length=50, blank=True)
     job = models.CharField(max_length=50, blank=True)
+    education = models.CharField(max_length=50, blank=True)
     national_code = models.CharField(max_length=10, unique=True, blank=True, null=True)
     address = models.CharField(max_length=50, blank=True)
     workNumber = models.CharField(max_length=11, null=True, blank=True)
