@@ -48,6 +48,7 @@ class User(AbstractBaseUser):
     connectorPhoneNumber = models.CharField(max_length=11, blank=True)
     connectorRole = models.CharField(max_length=20, blank=True)
     introductionLetter = models.FileField(upload_to='uploads/pdfs', blank=True)
+    wallet = models.DecimalField(max_digits=15, decimal_places=3, default=0)
     searchs = models.IntegerField(validators=[MinValueValidator(0) , MaxValueValidator(7)] , default=0)
     billsNumber = models.IntegerField(validators=[MinValueValidator(0) , MaxValueValidator(3)] , default=0)
     stars = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(5)], default=0)

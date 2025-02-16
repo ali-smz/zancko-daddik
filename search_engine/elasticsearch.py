@@ -1,40 +1,3 @@
-# from elasticsearch_dsl import Document, Text, Date
-# from elasticsearch_dsl.connections import connections
-# from elasticsearch_dsl.query import MultiMatch
-
-
-
-# connections.create_connection(hosts=['http://192.168.30.6:9200'])
-
-
-# class DocumentIndex(Document):
-#     title = Text()
-#     description = Text()
-#     created_at = Date()
-
-#     class Index:
-#         name = 'documents'
-
-# DocumentIndex.init()
-
-# # Function to index a document  
-# def index_document(instance):
-#     obj = DocumentIndex(
-#         meta={'id': instance.id},
-#         id = instance.id ,
-#         title=instance.title,
-#         description=instance.description,
-#         created_at=instance.created_at,
-#     )
-#     obj.save()
-
-# # Function to search documents
-# def search_documents(query):
-#     q = MultiMatch(query=query , fields=['title', 'description'] , fuzziness="AUTO" )
-#     return DocumentIndex.search().query(q)
-
-
-
 from elasticsearch import Elasticsearch
 from django.conf import settings
 
@@ -42,7 +5,7 @@ from django.conf import settings
 class ElasticModel:
     def __init__(self):
         self.client = Elasticsearch(settings.ELASTICSEARCH_DSL['default']['hosts'])
-        self.index = 'zancko'
+        self.index = 'tamin_ejtemaei'
 
     def create_index(self):
         if not self.client.indices.exists(index=self.index):
@@ -53,14 +16,14 @@ class ElasticModel:
 
     def search_data(self, query, fields=None):
         if fields is None:
-            fields = ["title", "description"]
+            fields = ["Title", "AttachmentText" , "TitleNumber" , "Subject" , "AttachmentLink" , "TitleDate" , "ApprovalAuthority" , "Organization"]
             
         search_body = {
             "query": {
                 "multi_match": {
                     "query": query,
                     "fields": fields,
-                    "fuzziness": "AUTO"
+                    # "fuzziness": "AUTO"
                 }
             }
         }

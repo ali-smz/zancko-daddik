@@ -92,6 +92,7 @@ class UserSerializer(serializers.ModelSerializer):
             connectorPhoneNumber=validated_data.get('connectorPhoneNumber', ''),
             connectorRole=validated_data.get('connectorRole', ''),
             introductionLetter=validated_data.get('introductionLetter', None),
+            wallet=validated_data.get('wallet', 0),
             stars=validated_data.get('stars', 0),
             searchs=validated_data.get('searchs', 0),
             billsNumber=validated_data.get('billsNumber', 0),
