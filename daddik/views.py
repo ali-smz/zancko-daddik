@@ -6,7 +6,7 @@ from rest_framework.permissions import AllowAny , IsAuthenticated
 from rest_framework import generics
 from rest_framework.views import APIView
 from .serializers import UserSerializer , AllUsers , TaskSerializer , MessageSerializer
-
+from datetime import timedelta
 
 # Create your views here.
 class CreateUserView(generics.CreateAPIView):
@@ -41,12 +41,38 @@ class UpdateUserView(generics.UpdateAPIView):
 
     def update(self, request, *args, **kwargs):
         user = self.get_object()
+        old_label = user.lable
         serializer = self.get_serializer(user, data=request.data, partial=True) 
         serializer.is_valid(raise_exception=True)
+        updated_user = serializer.save()
+        new_label = updated_user.lable
 
-        serializer.save()
+        if old_label != new_label and new_label == "legal" :
+            self.assign_legal_user_tasks(updated_user)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    def assign_legal_user_tasks(self , user) : 
+        task_to_add = [
+            {
+                "title": "Submit Company Documents",
+                "description": "Upload all required company documents to complete verification.",
+                "deadline": now() + timedelta(days=7)
+            },
+            {
+                "title": "Submit Company Documents",
+                "description": "Upload all required company documents to complete verification.",
+                "deadline": now() + timedelta(days=7)
+            },
+            {
+                "title": "Submit Company Documents",
+                "description": "Upload all required company documents to complete verification.",
+                "deadline": now() + timedelta(days=7)
+            }
+        ]
+
+        for task in task_to_add:
+            Task.objects.create(user=user , **task)
 
 
 class UserListView(viewsets.ModelViewSet):
