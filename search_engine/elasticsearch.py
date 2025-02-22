@@ -14,9 +14,11 @@ class ElasticModel:
     def insert_data(self, data):
         self.client.index(index=self.index, document=data)
 
-    def search_data(self, query, fields=None, fuzzy=True, index=None):
+    def search_data(self, query, fields=None, fuzzy=True, index=None, page=1, size=10):
         if fields is None:
             fields = ["Title", "AttachmentText", "TitleNumber", "Subject", "AttachmentLink", "TitleDate", "ApprovalAuthority", "Organization"]
+
+        from_ = (page - 1) * size
 
         multi_match = {
             "query": query,
@@ -32,12 +34,18 @@ class ElasticModel:
         search_body = {
             "query": {
                 "multi_match": multi_match
-            }
+            },
+            "from": from_,
+            "size": size
         }
-
-        print(index or self.index)
-        print(search_body)
-        print(fuzzy)
         
         response = self.client.search(index=index or self.index, body=search_body)
-        return response['hits']['hits']
+        
+        # Return both hits and total count
+        return {
+            'hits': response['hits']['hits'],
+            'total': response['hits']['total']['value'],
+            'page': page,
+            'size': size,
+            'total_pages': (response['hits']['total']['value'] + size - 1) // size
+        }
