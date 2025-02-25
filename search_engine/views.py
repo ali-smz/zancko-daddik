@@ -7,6 +7,8 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
+import jwt
+from django.contrib.auth import get_user_model
 
 
 def elasticsearch_insert_read(request):
@@ -30,15 +32,33 @@ def elasticsearch_insert_read(request):
             page=page,
             size=size
         )
+        
         auth_header = request.headers.get('Authorization', None)
-        print(auth_header)
-        if request.user.is_authenticated:
-            print('authenticated')
-            SearchTermHistory.objects.create(
-                user=request.user, 
-                search_term=query,      
-                search_date=now()    
-            )
+        if auth_header and auth_header.startswith('Bearer '):
+            try:
+                token = auth_header.split(' ')[1]
+                
+                payload = jwt.decode(
+                    token, 
+                    settings.SECRET_KEY,
+                    algorithms=['HS256']
+                )
+                
+                User = get_user_model()
+                user = User.objects.get(id=payload.get('user_id'))
+                
+                SearchTermHistory.objects.create(
+                    user=user,
+                    search_term=query,
+                    search_date=now()
+                )
+                
+                if user.searchs < 7:
+                    user.searchs += 1
+                    user.save()
+                    
+            except (jwt.InvalidTokenError, User.DoesNotExist, KeyError) as e:
+                print(f"Token validation error: {str(e)}")
     else:
         results = {
             'hits': [],
@@ -49,6 +69,8 @@ def elasticsearch_insert_read(request):
         }
     
     return JsonResponse(results, safe=False)
+
+
 
 def get_single_data(request):
     es_model = ElasticModel()
