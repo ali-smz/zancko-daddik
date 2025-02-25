@@ -1,18 +1,11 @@
-# import random
-# import string
-# from django.db import models
-# from django.core.validators import MinLengthValidator , MinValueValidator , MaxValueValidator
-# from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
-# from django.utils.timezone import now
-# from django.conf import settings
+from django.db import models
+from django.conf import settings
 
 
+class SearchTermHistory(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    search_term = models.CharField(max_length=255)
+    search_date = models.DateTimeField(auto_now_add=True)
 
-# class Message(models.Model):
-#     recipient = models.CharField(max_length=500)
-#     body = models.TextField()
-#     read = models.BooleanField(default=False)
-#     created_at = models.DateTimeField(auto_now_add=True)
-
-#     def __str__(self):
-#         return f'Message to {self.recipient.username} at {self.created_at}'
+    def __str__(self):
+        return f"{self.user.username} searched for '{self.search_term}' on {self.search_date}"

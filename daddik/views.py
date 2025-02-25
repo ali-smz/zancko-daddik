@@ -1,13 +1,13 @@
 from rest_framework.response import Response
 from rest_framework import viewsets , status
-from .models import User , Message , SubscriptionPlan , Task , UserSubscription
+from .models import User , Message , SubscriptionPlan , Task , UserSubscription , SubscriptionHistory
 from django.utils.timezone import now
 from rest_framework.permissions import AllowAny , IsAuthenticated
 from rest_framework import generics
 from rest_framework.views import APIView
 from .serializers import UserSerializer , AllUsers , TaskSerializer , MessageSerializer
 from datetime import timedelta
-
+from django.utils.crypto import get_random_string           
 # Create your views here.
 class CreateUserView(generics.CreateAPIView):
     queryset = User.objects.all()
@@ -142,26 +142,60 @@ class ChangeSubscriptionPlanView(APIView):
         user = request.user
         plan_name = request.data.get('plan')
 
+        # Fetch the new plan from the request
         try:
             plan = SubscriptionPlan.objects.get(name=plan_name)
         except SubscriptionPlan.DoesNotExist:
             return Response({'error': 'Invalid plan name'}, status=status.HTTP_400_BAD_REQUEST)
 
+        # Get the user's most recent subscription
         user_subscription = UserSubscription.objects.filter(user=user).order_by('-end_date').first()
 
         if not user_subscription:
             return Response({'error': 'No active subscription found'}, status=status.HTTP_400_BAD_REQUEST)
 
+        old_plan = user_subscription.plan  # Save the current plan before updating
+
+        # Update the user's subscription with the new plan and new end date
         user_subscription.plan = plan
         user_subscription.end_date = now() + plan.duration
         user_subscription.save()
+
+        # Create a SubscriptionHistory record to log the change
+        transaction_reference = get_random_string(length=16)  # Generate a unique reference for the transaction
+        SubscriptionHistory.objects.create(
+            user=user,
+            old_plan=old_plan,
+            new_plan=plan,
+            transaction_reference=transaction_reference
+        )
 
         return Response({
             'message': f'Successfully changed to {plan.name.capitalize()} plan',
             'plan': plan.name,
             'end_date': user_subscription.end_date
         }, status=status.HTTP_200_OK)
-    
+
+
+class SubscriptionHistoryView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        history = SubscriptionHistory.objects.filter(user=user).order_by('-change_date')
+        
+        history_data = [
+            {
+                'old_plan': history_item.old_plan.name,
+                'new_plan': history_item.new_plan.name,
+                'change_date': history_item.change_date,
+                'transaction_reference': history_item.transaction_reference
+            }
+            for history_item in history
+        ]
+
+        return Response({'history': history_data}, status=status.HTTP_200_OK)
+
 
 class TaskViewList(viewsets.ModelViewSet):
     serializer_class = TaskSerializer

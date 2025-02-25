@@ -129,6 +129,18 @@ class UserSubscription(models.Model):
         return f"{self.user.username} - {self.plan.name.capitalize()}"
 
 
+class SubscriptionHistory(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    old_plan = models.ForeignKey(SubscriptionPlan, related_name='old_plan', on_delete=models.CASCADE)
+    new_plan = models.ForeignKey(SubscriptionPlan, related_name='new_plan', on_delete=models.CASCADE)
+    change_date = models.DateTimeField(auto_now_add=True)
+    transaction_reference = models.CharField(max_length=100, unique=True)
+
+    def __str__(self):
+        return f"{self.user.username} changed from {self.old_plan.name} to {self.new_plan.name} on {self.change_date}"
+
+
+
 class Task(models.Model):
     title = models.CharField(max_length=100)
     description = models.TextField(blank=True)
