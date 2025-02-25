@@ -49,3 +49,11 @@ class ElasticModel:
             'size': size,
             'total_pages': (response['hits']['total']['value'] + size - 1) // size
         }
+    
+    def get_single_data(self, id , index = None):
+        try :
+            response = self.client.get(index=index or self.index, id=id)
+            return response['_source']
+        except Exception as e:
+            print(str(e))
+            return None

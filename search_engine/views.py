@@ -33,3 +33,17 @@ def elasticsearch_insert_read(request):
         }
     
     return JsonResponse(results, safe=False)
+
+def get_single_data(request):
+    es_model = ElasticModel()
+    id = request.GET.get('id', None)
+    if not id:
+        return JsonResponse({'error': 'id is required'}, status=400)
+    index = request.GET.get('index', None)
+    print(index , id)
+    data = es_model.get_single_data(id, index)
+    if data:
+        return JsonResponse(data, safe=False)
+    else:
+        return JsonResponse({'error': 'data not found'}, status=404)
+
