@@ -109,11 +109,11 @@ class SubscriptionPlan(models.Model):
     ]
 
     name = models.CharField(max_length=20, choices=PLAN_CHOICES, unique=True , default='free')
-    price = models.DecimalField(max_digits=10, decimal_places=2)
+    price = models.DecimalField(max_digits=20, decimal_places=2)
     duration = models.DurationField() 
 
     def __str__(self):
-        return f"{self.name.capitalize()} Plan - ${self.price}"
+        return f"{self.name.capitalize()} Plan - {self.price} Rials"
 
 
 class UserSubscription(models.Model):
