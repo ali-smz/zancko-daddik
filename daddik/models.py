@@ -4,6 +4,7 @@ from django.db import models
 from django.core.validators import MinLengthValidator , MinValueValidator , MaxValueValidator
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.utils.timezone import now
+from django.core.validators import RegexValidator
 from django.conf import settings
 
 # Create your models here.
@@ -17,6 +18,11 @@ class UserManager(BaseUserManager):
         return user
 
 
+
+password_validator = RegexValidator(
+    regex=r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$',
+    message="Password must contain at least one uppercase letter, one lowercase letter, and one number."
+)
 class User(AbstractBaseUser):
     STATUS_CHOICES = [
         ('real', 'Real'),
@@ -26,7 +32,7 @@ class User(AbstractBaseUser):
 
     lable = models.CharField(max_length=20, choices=STATUS_CHOICES, default='unknown')
     username = models.CharField(max_length=50 ,unique=True)
-    password = models.CharField(max_length=200, validators=[MinLengthValidator(8)])
+    password = models.CharField(max_length=200, validators=[MinLengthValidator(8) , password_validator])
     profilePicture = models.FileField(upload_to='uploads/images', blank=True)
     name = models.CharField(max_length=50, blank=True)
     lastName = models.CharField(max_length=50, blank=True)

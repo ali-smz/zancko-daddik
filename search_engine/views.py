@@ -7,67 +7,58 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
+from jwt.exceptions import ExpiredSignatureError, InvalidTokenError
 import jwt
 from django.contrib.auth import get_user_model
 
 
 def elasticsearch_insert_read(request):
-    es_model = ElasticModel()  
+    es_model = ElasticModel()
     query = request.GET.get('q', '')
     index = request.GET.get('index', None)
     fuzzy = request.GET.get('fuzzy', 'false').lower() == 'true'
-    
+
     try:
         page = int(request.GET.get('page', 1))
         size = int(request.GET.get('size', 10))
     except ValueError:
-        page = 1
-        size = 10
+        page, size = 1, 10
 
-    if query:
-        results = es_model.search_data(
-            query, 
-            index=index, 
-            fuzzy=fuzzy,
-            page=page,
-            size=size
-        )
-        
-        auth_header = request.headers.get('Authorization', None)
-        if auth_header and auth_header.startswith('Bearer '):
-            try:
-                token = auth_header.split(' ')[1]
-                
-                payload = jwt.decode(
-                    token, 
-                    settings.SECRET_KEY,
-                    algorithms=['HS256']
-                )
-                
-                User = get_user_model()
-                user = User.objects.get(id=payload.get('user_id'))
-                
-                SearchTermHistory.objects.create(
-                    user=user,
-                    search_term=query,
-                    search_date=now()
-                )
-                
-                if user.searchs < 7:
-                    user.searchs += 1
-                    user.save()
-                    
-            except (jwt.InvalidTokenError, User.DoesNotExist, KeyError) as e:
-                print(f"Token validation error: {str(e)}")
-    else:
-        results = {
-            'hits': [],
-            'total': 0,
-            'page': page,
-            'size': size,
-            'total_pages': 0
-        }
-    
+    if not query:
+        return JsonResponse({
+            'hits': [], 'total': 0, 'page': page, 'size': size, 'total_pages': 0
+        }, safe=False)
+
+    results = es_model.search_data(query, index=index, fuzzy=fuzzy, page=page, size=size)
+
+    auth_header = request.headers.get('Authorization', None)
+    if auth_header and auth_header.startswith('Bearer '):
+        try:
+            token = auth_header.split(' ')[1]
+            payload = jwt.decode(
+                token,
+                settings.SECRET_KEY,
+                algorithms=['HS256'],
+                options={"verify_exp": True}
+            )
+
+            User = get_user_model()
+            user = User.objects.only("id", "searchs").get(id=payload.get('user_id'))
+
+            subscription = user.subscription.latest('end_date')
+            SearchTermHistory.objects.create(user=user, search_term=query, search_date=now())
+            
+            if user.searchs < 7 and subscription.plan.name == "free":
+                user.searchs += 1
+                user.save(update_fields=["searchs"])
+
+        except ExpiredSignatureError:
+            return JsonResponse({"error": "Token has expired"}, status=401)
+        except InvalidTokenError:
+            return JsonResponse({"error": "Invalid token"}, status=401)
+        except User.DoesNotExist:
+            return JsonResponse({"error": "User not found"}, status=401)
+
     return JsonResponse(results, safe=False)
 
 

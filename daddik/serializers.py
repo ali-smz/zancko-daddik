@@ -2,6 +2,7 @@ from rest_framework import serializers
 from .models import User , Message
 from django.utils.timezone import now
 from .models import SubscriptionPlan , UserSubscription , Task
+import re
 from rest_framework_simplejwt.tokens import RefreshToken
 
 
@@ -44,6 +45,13 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = '__all__'
         extra_kwargs = { 'password': {'write_only': True} }
+
+    def validate_password(self, value):
+        if not re.match(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$', value):
+            raise serializers.ValidationError(
+                "Password must contain at least one uppercase letter, one lowercase letter, and one number."
+            )
+        return value
 
     def get_subscription(self, instance):
         subscription = instance.subscription.latest('end_date') if instance.subscription.exists() else None
@@ -106,8 +114,6 @@ class UserSerializer(serializers.ModelSerializer):
             end_date=now() + default_plan.duration
         )
 
-        # user.subscription = user_subscription
-        # user.save()
         
         if referred_by_code:
             try:
