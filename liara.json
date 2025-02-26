@@ -6,8 +6,8 @@
   },
   "disks": [
     {
-      "name": "uploads",
-      "mountTo": "path/to/folder"
+      "name": "douments",
+      "mountTo": "uploads/pdfs"
     }
   ]
 }
