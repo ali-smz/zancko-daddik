@@ -1,0 +1,13 @@
+{
+  "app": "dadik-back",
+  "port": 80,
+  "build": {
+    "location": "iran"
+  },
+  "disks": [
+    {
+      "name": "documents",
+      "mountTo": "uploads/pdfs"
+    }
+  ]
+}
