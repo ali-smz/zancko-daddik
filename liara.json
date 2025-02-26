@@ -8,6 +8,10 @@
     {
       "name": "documents",
       "mountTo": "uploads/pdfs"
+    },
+    {
+      "name": "images",
+      "mountTo": "uploads/images"
     }
   ]
 }
