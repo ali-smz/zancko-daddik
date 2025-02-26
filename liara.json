@@ -5,9 +5,9 @@
     "location": "iran"
   },
   "disks": [
-    {
-      "name": "douments",
-      "mountTo": "uploads/pdfs"
-    }
+    // {
+    //   "name": "douments",
+    //   "mountTo": "uploads/pdfs"
+    // }
   ]
 }
