@@ -13,7 +13,6 @@ from .tax_calculator import (
     calculate_property_transfer_tax,
     calculate_property_construction_sale_tax,
     calculate_heir_share,
-    calculate_inheritance_tax,
     calculate_customs_tax,
     calculate_raw_material_import_tax,
     calculate_equipment_import_tax,
@@ -67,30 +66,13 @@ class ProfitCalculatorViewSet(ViewSet):
         if serializer.is_valid():
             data = serializer.validated_data
             response_data = {}
-
             tax_fields = {
-                'salary': ('income_tax', calculate_income_tax),
-                'corporate_profit': ('corporate_tax', calculate_corporate_tax),
                 'personal_profit': ('personal_business_tax', calculate_personal_business_tax),
                 'dividend': ('dividend_tax', calculate_dividend_tax),
-                'contract_value': ('contractor_tax', calculate_contractor_tax),
                 'sales_value': ('vat_sales', calculate_vat_sales),
-                'import_value': ('vat_import', calculate_vat_import),
-                'customs_value': ('customs_tax', calculate_customs_tax),
-                'raw_material_import_value': ('raw_material_import_tax', calculate_raw_material_import_tax),
-                'equipment_import_value': ('equipment_import_tax', calculate_equipment_import_tax),
-                'export_value': ('export_tax', calculate_export_tax),
-                'delay_days': ('vat_delay_penalty', calculate_vat_delay_penalty),
-                'rent_income': ('property_rent_tax', calculate_property_rent_tax),
                 'transfer_value': ('property_transfer_tax', calculate_property_transfer_tax),
                 'construction_sale_value': ('property_construction_sale_tax', calculate_property_construction_sale_tax),
-                'contractor_income': ('withholding_contractor_tax', calculate_withholding_contractor_tax),
-                'personal_service_income': ('personal_service_tax', calculate_personal_service_tax),
                 'declaration_missing_days': ('declaration_penalty', calculate_declaration_penalty),
-                'tax_payment_delay_days': ('payment_delay_penalty', calculate_payment_delay_penalty),
-                'correction_penalty_amount': ('correction_penalty', calculate_correction_penalty),
-                'quarterly_income': ('quarterly_tax', calculate_quarterly_tax),
-                'total_annual_income': ('annual_tax', lambda x: calculate_annual_tax(x, data.get('paid_taxes', 0))),
             }
 
 
@@ -100,21 +82,181 @@ class ProfitCalculatorViewSet(ViewSet):
                     response_data[response_key] = calc_method(value)
 
             # Handle special cases
-            if data.get('inheritance_value', 0) > 0 and data.get('heir_share_percentage', 0) > 0:
-                heir_share = calculate_heir_share(data['inheritance_value'], data['heir_share_percentage'])
-                response_data['heir_share'] = heir_share
-                response_data['inheritance_tax'] = calculate_inheritance_tax(heir_share)
+            if data.get('gross_income', 0) > 0 and data.get('insurance_right', 0) > 0:
+                exemptions = data.get('exemptions', 0) 
+                income_tax = calculate_income_tax(data['gross_income'], data['insurance_right'] , exemptions)
+                response_data['income_tax'] = income_tax 
 
-            if data.get('rural_insurance_exemption'):
-                response_data['rural_insurance_exemption'] = "معافیت مشتركان بیمه روستایی"
+            if data.get('corporate_profit', 0) > 0 :
+                taxPayer = data.get('taxPayer', 0) 
+                corporate_tax = calculate_corporate_tax(data['corporate_profit'] , taxPayer)
+                response_data['corporate_tax'] = corporate_tax 
 
-            if data.get('free_zone_exemption'):
-                response_data['free_zone_exemption'] = "معافیت مشتركان منطقه آزاد"
+            if data.get('contract_value', 0) > 0 and data.get('prepaid', 0) > 0:
+                taxPayer = data.get('taxPayer', 0) 
+                contracting_tax = calculate_contractor_tax(data['contract_value'], data['prepaid'] , taxPayer)
+                response_data['contracting_tax'] = contracting_tax
+
+            if data.get('import_value', 0) > 0 and data.get('cif_value', 0) > 0:
+                other_comps = data.get('other_comps', 0) 
+                vat_import = calculate_vat_import(data['import_value'], data['cif_value'] , other_comps)
+                response_data['vat_import'] = vat_import
+
+            if data.get('rent_income', 0) > 0 and data.get('months', 0) > 0:
+                costs = data.get('costs', 0) 
+                isLegal = data.get('isLegal', False)  # Ensure we always get this value
+                property_rent_tax = calculate_property_rent_tax(data['rent_income'], data['months'], isLegal, costs)
+                response_data['property_rent_tax'] = property_rent_tax
+
+            if data.get('base_penalty', 0) > 0 and data.get('delay_months', 0) > 0:
+                vat_delay_penalty = calculate_vat_delay_penalty(data['base_penalty'], data['delay_months'])
+                response_data['vat_delay_penalty'] = vat_delay_penalty
+
+            if data.get('inheritance_value', 0) > 0 and data.get('asset_type') and data.get('relationship_class'):
+                inheritance_value = data['inheritance_value']
+                asset_type = data['asset_type']
+                relationship_class = data['relationship_class']
+                number_of_heirs = data.get('number_of_heirs', 1) 
+
+                inheritance_tax, tax_per_heir = calculate_heir_share(
+                    inheritance_value, asset_type, relationship_class, number_of_heirs
+                )
+
+                response_data['inheritance_tax'] = inheritance_tax
+                response_data['tax_per_heir'] = tax_per_heir
+
+            if data.get('cif_value', 0) > 0 and data.get('product_type'):
+                cif_value = data['cif_value']
+                product_type = data['product_type']
+                country_of_origin = data.get('country_of_origin', "")
+
+                total_customs_tax, customs_tax, vat_tax, excise_tax = calculate_customs_tax(
+                    cif_value, product_type, country_of_origin
+                )
+
+                response_data['total_customs_tax'] = total_customs_tax
+                response_data['customs_tax'] = customs_tax
+                response_data['vat_tax'] = vat_tax
+                response_data['excise_tax'] = excise_tax
+
+
+            if data.get('cif_value', 0) > 0 and data.get('material_type'):
+                cif_value = data['cif_value']
+                material_type = data['material_type']
+
+                total_import_tax, customs_tax, vat_tax, excise_tax = calculate_raw_material_import_tax(
+                    cif_value, material_type
+                )
+
+                response_data['total_raw_material_import_tax'] = total_import_tax
+                response_data['customs_tax'] = customs_tax
+                response_data['vat_tax'] = vat_tax
+                response_data['excise_tax'] = excise_tax
+            
+            if data.get('cif_value_equipment', 0) > 0 and data.get('equipment_type'):
+                cif_value = data['cif_value_equipment']
+                equipment_type = data['equipment_type']
+
+                equipment_duty_rates = {
+                    'medical': 0.05,  
+                    'industrial': 0.08,  
+                    'electronics': 0.12, 
+                    'other': 0.1  
+                }
+
+                customs_duty_rate = equipment_duty_rates.get(equipment_type, 0.1) 
+
+                total_import_tax, customs_duty, vat, excise_duty = calculate_equipment_import_tax(
+                    cif_value, equipment_type, customs_duty_rate
+                )
+
+                response_data['total_equipment_import_tax'] = total_import_tax
+                response_data['customs_duty'] = customs_duty
+                response_data['vat_tax'] = vat
+                response_data['excise_tax'] = excise_duty
+
+            if data.get('export_value', 0) > 0:
+                export_value = data['export_value']
+                default_excise_duty_rate = 0.02
+
+                total_export_tax, excise_duty = calculate_export_tax(export_value, excise_duty_rate=default_excise_duty_rate)
+
+                response_data['total_export_tax'] = total_export_tax
+                response_data['excise_duty'] = excise_duty
+
+
+            
+            if data.get('contract_value', 0) > 0 and data.get('project_type'):
+                contract_value = data['contract_value']
+                project_type = data['project_type']
+
+                project_tax_rates = {
+                    'construction': 0.1,  
+                    'IT': 0.07,  
+                    'manufacturing': 0.08,  
+                    'other': 0.1  
+                }
+
+                tax_rate = project_tax_rates.get(project_type, 0.1)
+
+                total_tax, income_tax, vat_tax, excise_duty = calculate_withholding_contractor_tax(
+                    contract_value, project_type, tax_rate
+                )
+
+                response_data['total_withholding_contractor_tax'] = total_tax
+                response_data['income_tax'] = income_tax
+                response_data['vat_tax'] = vat_tax
+                response_data['excise_tax'] = excise_duty
+
+            if data.get('personal_service_income', 0) > 0 and 'job_type' in data:
+                personal_income = data['personal_service_income']
+                job_type = data['job_type']
+                exemptions = data.get('exemptions', 0)
+
+                personal_service_tax = calculate_personal_service_tax(personal_income, job_type, exemptions)
+
+                response_data['personal_service_tax'] = personal_service_tax
+
+            if all(key in data for key in ['initial_tax', 'amendment_date', 'initial_submission_date']):
+                initial_tax = data['initial_tax']
+                amendment_date = data['amendment_date']
+                initial_submission_date = data['initial_submission_date']
+
+                correction_penalty = calculate_correction_penalty(initial_tax, amendment_date, initial_submission_date)
+
+                response_data['correction_penalty'] = correction_penalty
+                
+            if data.get('quarterly_income', 0) > 0:
+                quarterly_income = data['quarterly_income']
+                quarterly_tax_rate = data.get('quarterly_tax_rate', 0.1)
+                exemptions = data.get('exemptions', 0)
+
+                quarterly_tax = calculate_quarterly_tax(quarterly_income, quarterly_tax_rate, exemptions)
+
+                response_data['quarterly_tax'] = quarterly_tax
+
+            if data.get('annual_income', 0) > 0:
+                annual_income = data['annual_income']
+                exemptions = data.get('exemptions', 0)
+
+                annual_tax = calculate_annual_tax(annual_income, exemptions)
+
+                response_data['annual_tax'] = annual_tax
+
+            if all(key in data and data[key] is not None for key in ['tax_amount', 'due_date', 'payment_date']):
+                tax_amount = data['tax_amount']
+                due_date = data['due_date']
+                payment_date = data['payment_date']
+
+                payment_delay_penalty = calculate_payment_delay_penalty(tax_amount, due_date, payment_date)
+
+                response_data['payment_delay_penalty'] = payment_delay_penalty
 
             return Response(response_data, status=status.HTTP_200_OK)
-
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
+
+
 
     
 class LaborLawCalculatorViewSet(ViewSet):
