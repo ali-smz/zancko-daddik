@@ -79,41 +79,82 @@ class ProfitCalculatorSerializer(serializers.Serializer):
 
 class LaborLawCalculatorSerializer(serializers.Serializer):
     salary = serializers.IntegerField(required=False, default=0)
+    monthly_worked = serializers.IntegerField(required=False, default=0)
+    monthly_hours = serializers.IntegerField(required=False, default=220)
+
+    overtime_percentage = serializers.IntegerField(required=False, default=40)
+    worked_hours = serializers.IntegerField(required=False, default=0)
+
+    night_shift_percentage = serializers.IntegerField(required=False, default=0)
+    night_hours = serializers.IntegerField(required=False, default=0)
+
     hourscount = serializers.IntegerField(required=False, default=0)
-    salaryvalueperhour = serializers.IntegerField(required=False, default=0)
-    shiftvalue = serializers.IntegerField(required=False, default=0)
     salaryvaluepermounth = serializers.IntegerField(required=False, default=0)
+    shiftvalue = serializers.IntegerField(required=False, default=0)
+
     basicsalaryvaluepermounth = serializers.IntegerField(required=False, default=0) 
     workedmonth = serializers.IntegerField(required=False, default=0)
+
     percentageOFbonus = serializers.IntegerField(required=False, default=0) 
+
     workedmounthcount = serializers.IntegerField(required=False, default=0)
-    totaldays = serializers.IntegerField(required=False, default=0) 
+
     salaryvalueperday = serializers.IntegerField(required=False, default=0)
+    totaldays = serializers.IntegerField(required=False, default=0)
+
+    totaldaysUsed = serializers.IntegerField(required=False, default=0) 
+
+    isConfirmed = serializers.BooleanField(required=False, default=False)
+
     realtime = serializers.IntegerField(required=False, default=0)
     legaltime = serializers.IntegerField(required=False, default=0) 
     approvedvalue = serializers.IntegerField(required=False, default=0)    
-    salaryvaluepermonth = serializers.IntegerField(required=False, default=0)
+
     totalmonth = serializers.IntegerField(required=False, default=0)  
     oip = serializers.IntegerField(required=False, default=0)
-    remainingTime = serializers.IntegerField(required=False, default=0) 
-    Arrears = serializers.IntegerField(required=False, default=0) 
-    marriedOrnot = serializers.BooleanField(required=False, default=False)
 
+    contract_amount = serializers.IntegerField(required=False, default=0)
+    total_duration_months = serializers.IntegerField(required=False, default=0) 
+    compensation_percentage = serializers.IntegerField(required=False, default=0)
+    start_date = serializers.DateField(required=False, allow_null=True)
+    termination_date = serializers.DateField(required=False, allow_null=True)
+
+
+from rest_framework import serializers
 
 class SocialSecurityCalculatorSerializer(serializers.Serializer):
+    # Fields for night overtime
+    base_salary = serializers.IntegerField(required=False, default=0)
+    standard_hours = serializers.IntegerField(required=False, default=220)
+    night_overtime_hours = serializers.IntegerField(required=False, default=0)
+
+    # Fields for self-employment insurance
     salary = serializers.IntegerField(required=False, default=0)
     rate = serializers.IntegerField(required=False, default=0)
+
+    # Fields for worker's insurance
     variable_benefits = serializers.IntegerField(required=False, default=0)
-    workHistory = serializers.IntegerField(required=False, default=0)
+
+    # Fields for unemployment insurance
     countUnderTutelage = serializers.IntegerField(required=False, default=0)
-    average_salary_inPast90days = serializers.IntegerField(required=False, default=0) 
+    average_salary_inPast90days = serializers.IntegerField(required=False, default=0)
+
+    # Fields for retirement pension
     avaragelast2yearsSalary = serializers.IntegerField(required=False, default=0)
-    insurance_history = serializers.IntegerField(required=False, default=0) 
+    insurance_history = serializers.IntegerField(required=False, default=0)
+
+    # Fields for insurance delay penalty
     right_insurance = serializers.IntegerField(required=False, default=0)
-    monthdelay = serializers.IntegerField(required=False, default=0) 
+    monthdelay = serializers.IntegerField(required=False, default=0)
+
+    # Fields for insured share (medical costs)
     treatment_cost = serializers.IntegerField(required=False, default=0)
     insured_share = serializers.IntegerField(required=False, default=0)
-    peyment_ceiling = serializers.IntegerField(required=False, default=0) 
-    lastmonthsalary = serializers.IntegerField(required=False, default=0)    
+    peyment_ceiling = serializers.IntegerField(required=False, default=0)
+
+    # Fields for termination bonus
+    lastmonthsalary = serializers.IntegerField(required=False, default=0)
     yearsofWork = serializers.IntegerField(required=False, default=0)
-    marriedOrnot = serializers.BooleanField(required=False, default=False)
+
+    total_insurance = serializers.IntegerField(required=False, default=0)
+    months_delayed = serializers.IntegerField(required=False, default=0)    

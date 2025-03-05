@@ -43,14 +43,14 @@ from .LaborLawCalculators import (
     Compensation_for_contract_termination
 )
 from .SocialSecurityCalculators import (
-    self_empleyed_insurance,
-    workers_insurance,
-    unemployment_insurance ,
-    Retirement_pension ,
-    delaySendingList ,
-    delayPayment ,
-    Insured_share ,
-    termination_bonus
+    calculate_night_overtime,
+    calculate_self_employment_insurance,
+    calculate_worker_insurance ,
+    calculate_unemployment_insurance ,
+    calculate_pension ,
+    calculate_insurance_delay_penalty ,
+    calculate_insurance_list_delay_penalty ,
+    calculate_insured_share
     )
 from rest_framework import status
 from rest_framework.viewsets import ViewSet
@@ -266,12 +266,17 @@ class LaborLawCalculatorViewSet(ViewSet):
             data = serializer.validated_data
             response_data = {}
             
-            if data.get('salary') > 0 :
-                response_data['basic_salary'] = Basic_salary_based_on_working_hours(data['salary'])
+            if data.get('salary') > 0 and data.get('monthly_worked') > 0 :
+                monthly_hours = data['monthly_hours']
+                response_data['basic_salary'] = Basic_salary_based_on_working_hours(data['salary'] , data['monthly_worked'] , monthly_hours)
 
-            elif data.get("hourscount") > 0 and data.get("salaryvalueperhour") > 0:
-                response_data['overtime_amount'] = Overtime_And_workOnPublicHolidays(data["salaryvalueperhour"] , data['hourscount'])
-                response_data['night_shift_amount'] = nightwork(data["salaryvalueperhour"] , data['hourscount'])
+            elif data.get("salary") > 0 and data.get("worked_hours") > 0 and data.get('overtime_percentage'):
+                monthly_hours = data['monthly_hours']
+                response_data['overtime_amount'] = Overtime_And_workOnPublicHolidays(data["salary"] , data['worked_hours'] , monthly_hours , data['overtime_percentage'])
+
+            elif data.get("salary") > 0 and data.get("night_hours") > 0 and data.get('night_shift_percentage'):
+                monthly_hours = data['monthly_hours']
+                response_data['night_shift_amount'] = nightwork(data["salary"] , data['night_hours'] , monthly_hours , data['night_shift_percentage'])
 
             elif data.get("hourscount") > 0 and data.get("salaryvaluepermounth") > 0 and data.get("shiftvalue") > 0:
                 response_data['shift_right'] = shift_right(data["salaryvaluepermounth"] , data['shiftvalue'] , data['hourscount'])
@@ -285,16 +290,19 @@ class LaborLawCalculatorViewSet(ViewSet):
             elif data.get("basicsalaryvaluepermounth") > 0 and data.get("workedmounthcount") > 0:
                 response_data['years_of_work_amount'] = years_of_work(data["basicsalaryvaluepermounth"] , data['workedmounthcount'])
 
-            elif data.get("marriedOrnot") and data.get("totaldays") > 0 and data.get("salaryvalueperday") > 0:
-                response_data['sick_leave_days'] = sick_leave(data["marriedOrnot"] , data['totaldays'] , data['salaryvalueperday'])
+            elif data.get("isConfirmed") and data.get("totaldays") > 0 and data.get("salaryvalueperday") > 0:
+                response_data['sick_leave_days'] = sick_leave(data["isConfirmed"] , data['totaldays'] , data['salaryvalueperday'])
 
             elif data.get("totaldays") > 0 and data.get("salaryvalueperday") > 0:
                 response_data['unused_paid_leave'] = unused_paid_leave(data["salaryvalueperday"] , data['totaldays'])
-                response_data['Salary_for_leave_without'] = Salary_for_leave_without(data["salaryvalueperday"] , data['totaldays'])
 
+            elif data.get("totaldaysUsed") > 0 and data.get("salaryvalueperday") > 0:
+                response_data['Salary_for_leave_without'] = Salary_for_leave_without(data["salaryvalueperday"] , data['totaldaysUsed'])
+            
             elif data.get("realtime") > 0 and data.get("legaltime") > 0 and data.get("approvedvalue") > 0:
                 response_data['travel_allowance_amount'] = Travel_allowance(data["realtime"] , data["legaltime"] , data['approvedvalue'])
                 response_data['grocery_allowance_amount'] = Grocery_allowance(data["realtime"] , data["legaltime"] , data['approvedvalue'])
+                response_data['housing_allowance_amount'] = Housing_allowance(data["realtime"] , data["legaltime"] , data['approvedvalue'])
            
             elif data.get("salaryvaluepermonth") > 0 and data.get("totaldays") > 0:
                 response_data['late_payment_crimes_amount'] = Late_payment_crimes(data["salaryvaluepermonth"] , data['totaldays'])
@@ -302,8 +310,8 @@ class LaborLawCalculatorViewSet(ViewSet):
             elif data.get("oip") > 0 and data.get("totalmonth") > 0:
                 response_data['overdue_insurance_penalty_amount'] = Overdue_insurance_penalty(data["oip"] , data['totalmonth'])
 
-            elif data.get("salaryvaluepermonth") > 0 and data.get("remainingTime") > 0 and data.get("Arrears"):
-                response_data['compensation_for_contract_termination_amount'] = Compensation_for_contract_termination(data['remainingTime'] , data['salaryvaluepermonth'] , data["Arrears"])
+            elif data.get("contract_amount") > 0 and data.get("total_duration_months") > 0 and data.get("compensation_percentage") and data.get("start_date") and data.get("termination_date"):
+                response_data['compensation_for_contract_termination_amount'] = Compensation_for_contract_termination(data['contract_amount'] , data['start_date'] , data["termination_date"] , data['total_duration_months'] , data['compensation_percentage'])
             
             return Response(response_data, status=status.HTTP_200_OK)
 
@@ -319,29 +327,54 @@ class SocialSecurityculatorViewSet(ViewSet):
             data = serializer.validated_data
             response_data = {}
             
-            if data.get('salary') > 0 and data.get('rate') > 0 :
-                response_data['self_empleyed_insurance'] = self_empleyed_insurance(data['salary'] , data['rate'])
+            if data.get('base_salary') > 0 and data.get('night_overtime_hours') > 0:
+                response_data['night_overtime'] = calculate_night_overtime(
+                    data['base_salary'], data['standard_hours'], data['night_overtime_hours']
+                )
 
-            elif data.get("variable_benefits") > 0:
-                response_data['workers_insurance'] = workers_insurance(data["variable_benefits"])
+            # Self-Employment Insurance Calculation
+            elif data.get('salary') > 0 and data.get('rate') > 0:
+                response_data['self_employed_insurance'] = calculate_self_employment_insurance(
+                    data['salary'], data['rate']
+                )
 
-            elif data.get("workHistory") > 0 and data.get("countUnderTutelage") > 0 and data.get("average_salary_inPast90days") > 0:
-                response_data['unemployment_insurance'] = unemployment_insurance(data["workHistory"] , data.get('MarriedOrNot') , data['countUnderTutelage'] , data['average_salary_inPast90days'])
-                
-            elif data.get("avaragelast2yearsSalary") > 0 and data.get("insurance_history") > 0:
-                response_data['Retirement_pension'] = Retirement_pension(data["avaragelast2yearsSalary"] , data['insurance_history'])
+            # Worker's Insurance Calculation
+            elif data.get('variable_benefits') > 0:
+                response_data['workers_insurance'] = calculate_worker_insurance(
+                    data['variable_benefits']
+                )
 
-            elif data.get("right_insurance") > 0 and data.get("monthdelay") > 0:
-                response_data['right_insurance_delay_amount'] = delayPayment(data["right_insurance"] , data['monthdelay'])
+            # Unemployment Insurance Calculation
+            elif data.get('average_salary_inPast90days') > 0 and data.get('countUnderTutelage') > 0 :
+                response_data['unemployment_insurance'] = calculate_unemployment_insurance(
+                    data['average_salary_inPast90days'], 
+                    data['countUnderTutelage']
+                )
 
-            elif data.get("right_insurance") > 0:
-                response_data['right_insurance'] = delaySendingList(data["right_insurance"])
+            # Retirement Pension Calculation
+            elif data.get('avaragelast2yearsSalary') > 0 and data.get('insurance_history') > 0:
+                response_data['retirement_pension'] = calculate_pension(
+                    data['avaragelast2yearsSalary'], data['insurance_history']
+                )
 
-            elif data.get("treatment_cost") > 0 and data.get("insured_share") > 0 and data.get("peyment_ceiling"):
-                response_data['insured_share_amount'] = Insured_share(data["insured_share"] , data['peyment_ceiling'] , data['treatment_cost'])
+            # Insurance Delay Penalty Calculation
+            elif data.get('right_insurance') > 0 and data.get('monthdelay') > 0:
+                response_data['insurance_delay_penalty'] = calculate_insurance_delay_penalty(
+                    data['right_insurance'], data['monthdelay']
+                )
 
-            elif data.get("lastmonthsalary") and data.get("yearsofWork") > 0 :
-                response_data['termination_bonus_amount'] = termination_bonus(data["lastmonthsalary"] , data['yearsofWork'])
+            # Insured Share (Medical Costs) Calculation
+            elif data.get('treatment_cost') > 0 and data.get('insured_share') > 0 and data.get('peyment_ceiling') > 0:
+                response_data['insured_share'] = calculate_insured_share(
+                    data['treatment_cost'], data['insured_share'], data['peyment_ceiling']
+                )
+
+            # Termination Bonus Calculation
+            elif data.get('total_insurance') > 0 and data.get('months_delayed') > 0:
+                response_data['insurance_list_delay_penalty'] = calculate_insurance_list_delay_penalty(
+                    data['total_insurance'], data['months_delayed']
+                )
+
             
             return Response(response_data, status=status.HTTP_200_OK)
 

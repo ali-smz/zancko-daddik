@@ -1,94 +1,169 @@
-import pandas as pd
+def calculate_night_overtime(base_salary, standard_hours, night_overtime_hours):
+    """
+    Calculate night overtime pay based on the given inputs.
 
+    Parameters:
+        base_salary (float): Monthly base salary in Tomans.
+        standard_hours (int): Standard monthly working hours.
+        night_overtime_hours (int): Number of night overtime hours worked.
 
-data = pd.read_csv('Data_Calc.csv')
-base_insurance_salary = data.loc[data["sub"]=='base insurance salary' , 'value'].iloc[0]
-right_treatment = data.loc[data["sub"]=='right treatment' , 'value'].iloc[0]
-right_housing = data.loc[data["sub"]=='right housing' , 'value'].iloc[0]
-Pension_ceiling = data.loc[data["sub"]=='Pension ceiling' , 'value'].iloc[0]
+    Returns:
+        float: Night overtime pay amount.
+    """
+    # Hourly rate calculation
+    hourly_rate = base_salary / standard_hours
+    
+    # Night overtime rate (35% increase)
+    night_overtime_rate = hourly_rate * 1.35
+    
+    # Night overtime pay
+    night_overtime_pay = night_overtime_rate * night_overtime_hours
+    
+    return night_overtime_pay
 
+def calculate_self_employment_insurance(base_salary, insurance_rate):
+    """
+    Calculate self-employment insurance based on the given inputs.
 
-#وبیمه رانندگان و مشاغل خاص و بیمه مشاغل آزاد
-def self_empleyed_insurance(rate,salary):
-    return right_treatment + (rate * salary)
+    Parameters:
+        base_salary (float): Base salary for insurance calculation.
+        insurance_rate (float): Insurance rate percentage (e.g., 12%, 14%, 18%).
 
-#بیمه کارگران
-def workers_insurance(variable_benefits = 0):
-    total = right_housing + right_treatment + base_insurance_salary + variable_benefits
-    rt = total * 0.30
-    rworker = total * 0.07
-    remployer = total * 0.2
-    rgoverment = total * 0.03
+    Returns:
+        float: Self-employment insurance amount.
+    """
+    # Ensure the insurance rate is valid
+    if insurance_rate not in [12, 14, 18]:
+        raise ValueError("Insurance rate must be 12%, 14%, or 18%.")
+    
+    # Calculate insurance amount
+    insurance_amount = base_salary * (insurance_rate / 100)
+    
+    return insurance_amount
+
+def calculate_worker_insurance(insurable_salary):
+    """
+    Calculate worker insurance contributions based on the given inputs.
+
+    Parameters:
+        insurable_salary (float): Total insurable salary (base + allowances).
+
+    Returns:
+        dict: Worker and employer insurance contributions.
+    """
+    # Worker's share (7%)
+    worker_share = insurable_salary * 0.07
+    
+    # Employer's share (23%)
+    employer_share = insurable_salary * 0.23
+    
+    # Total insurance amount
+    total_insurance = worker_share + employer_share
+    
     return {
-        'rt': int(rt),
-        'rworker': int(rworker),
-        'remployer': int(remployer),
-        'rgoverment': int(rgoverment)
+        "worker_share": worker_share,
+        "employer_share": employer_share,
+        "total_insurance": total_insurance
     }
 
-#بیمه بیکاری
-def unemployment_insurance(workHistory,MarriedOrNot,countUnderTutelage,average_salary_inPast90days):
-    period = 0
-    if MarriedOrNot :
-        if workHistory < 6:
-            period = period
-        elif 6 <= workHistory <24:
-            period = period + 6
-        elif 24 <= workHistory <120:
-            period = period + 12
-        elif 120 <= workHistory <180:
-            period = period + 18
-        elif 180 <=workHistory < 240:
-            period = period + 26
-        elif workHistory >= 240:
-            period = period + 36
-    else:
-        if workHistory < 6:
-            period = period
-        elif 6 <= workHistory <24:
-            period = period + 12
-        elif 24 <= workHistory <120:
-            period = period + 18
-        elif 120 <= workHistory <180:
-            period = period + 26
-        elif 180 <=workHistory < 240:
-            period = period + 36
-        elif workHistory >= 240:
-            period = period + 50
-    r1 = average_salary_inPast90days * 0.55
-    r2 = 0.1 * countUnderTutelage * average_salary_inPast90days
-    rt = r1 + r2
-    return {
-        'rt' : rt ,
-        'period' : period
-    }
+def calculate_unemployment_insurance(avg_salary_last_3_months, dependents=0):
+    """
+    Calculate unemployment insurance based on the given inputs.
 
-#مستمری بازنشستگی
-def Retirement_pension(avaragelast2yearsSalary,insurance_history):
-    pension = 0
-    if insurance_history > 10:
-        insurance_history = insurance_history - 10
-        pension += 0.2
-        newi =insurance_history * 0.15
-        pension += newi
-        r = avaragelast2yearsSalary * pension
-        if r > Pension_ceiling:
-            r = Pension_ceiling
-    return r
-#جریمه تأخیر در ارسال لیست بیمه
-def delaySendingList(right_insurance):
-    return right_insurance * 0.2
+    Parameters:
+        avg_salary_last_3_months (float): Average salary of the last 3 months.
+        dependents (int): Number of dependents (default is 0).
 
-#جریمه عدم پرداخت حق بیمه
-def delayPayment(right_insurance,monthdelay):
-    return right_insurance * monthdelay * 0.02 *monthdelay
+    Returns:
+        float: Unemployment insurance amount.
+    """
+    # Base percentage (55%)
+    base_percentage = 0.55
+    
+    # Additional percentage per dependent (10% each, max 4 dependents)
+    additional_percentage = min(dependents, 4) * 0.10
+    
+    # Total percentage
+    total_percentage = base_percentage + additional_percentage
+    
+    # Cap at 80%
+    total_percentage = min(total_percentage, 0.80)
+    
+    # Calculate unemployment insurance
+    unemployment_insurance = avg_salary_last_3_months * total_percentage
+    
+    return unemployment_insurance
 
-#سهم بیمه‌شده از هزینه درمان
-def Insured_share(treatment_cost,insured_share,peyment_ceiling):
-    r = treatment_cost * insured_share
-    if r >= peyment_ceiling:
-        r = peyment_ceiling
-    return r
-#پاداش پایان خدمت
-def termination_bonus(lastmonthsalary,yearsofWork):
-    return lastmonthsalary * yearsofWork
+
+def calculate_pension(avg_salary_last_2_years, years_of_service):
+    """
+    Calculate retirement pension based on the given inputs.
+
+    Parameters:
+        avg_salary_last_2_years (float): Average salary of the last 2 years.
+        years_of_service (int): Total years of service.
+
+    Returns:
+        float: Retirement pension amount.
+    """
+    # Pension formula
+    pension = avg_salary_last_2_years * (years_of_service / 30)
+    
+    return pension
+
+
+def calculate_insurance_delay_penalty(debt_amount, months_delayed):
+    """
+    Calculate penalty for delayed insurance payment.
+
+    Parameters:
+        debt_amount (float): Total insurance debt amount.
+        months_delayed (int): Number of months delayed.
+
+    Returns:
+        float: Penalty amount.
+    """
+    # Monthly penalty rate (2%)
+    penalty_rate = 0.02
+    
+    # Calculate penalty
+    penalty = debt_amount * penalty_rate * months_delayed
+    
+    return penalty
+
+
+def calculate_insurance_list_delay_penalty(total_insurance, months_delayed):
+    """
+    Calculate penalty for delayed submission of insurance list.
+
+    Parameters:
+        total_insurance (float): Total monthly insurance amount.
+        months_delayed (int): Number of months delayed.
+
+    Returns:
+        float: Penalty amount.
+    """
+    # Monthly penalty rate (2%)
+    penalty_rate = 0.02
+    
+    # Calculate penalty
+    penalty = total_insurance * penalty_rate * months_delayed
+    
+    return penalty
+
+
+def calculate_insured_share(total_cost, insured_percentage):
+    """
+    Calculate the insured person's share of medical costs.
+
+    Parameters:
+        total_cost (float): Total medical cost.
+        insured_percentage (float): Percentage of cost covered by the insured.
+
+    Returns:
+        float: Insured person's share.
+    """
+    # Calculate insured share
+    insured_share = total_cost * (insured_percentage / 100)
+    
+    return insured_share
