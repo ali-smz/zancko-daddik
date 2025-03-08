@@ -15,7 +15,7 @@ from django.contrib.auth import get_user_model
 def elasticsearch_insert_read(request):
     es_model = ElasticModel()
     query = request.GET.get('q', '')
-    index = request.GET.get('index', None)
+    index = request.GET.get('index', None) 
     fuzzy = request.GET.get('fuzzy', 'false').lower() == 'true'
 
     try:
@@ -47,7 +47,7 @@ def elasticsearch_insert_read(request):
 
             subscription = user.subscription.latest('end_date')
             SearchTermHistory.objects.create(user=user, search_term=query, search_date=now())
-            
+
             if user.searchs < 7 and subscription.plan.name == "free":
                 user.searchs += 1
                 user.save(update_fields=["searchs"])

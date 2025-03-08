@@ -5,7 +5,7 @@ from django.conf import settings
 class ElasticModel:
     def __init__(self):
         self.client = Elasticsearch(settings.ELASTICSEARCH_DSL['default']['hosts'])
-        self.index = 'tamin_ejtemaei'
+        self.index = '_all'
 
     def create_index(self):
         if not self.client.indices.exists(index=self.index):
@@ -30,7 +30,7 @@ class ElasticModel:
             multi_match["fuzziness"] = "AUTO"
         else:
             multi_match["operator"] = "AND"
-        
+
         search_body = {
             "query": {
                 "multi_match": multi_match
@@ -38,10 +38,15 @@ class ElasticModel:
             "from": from_,
             "size": size
         }
-        
-        response = self.client.search(index=index or self.index, body=search_body)
-        
-        # Return both hits and total count
+
+       
+        if index:
+            index_list = index.split(',')
+        else:
+            index_list = [self.index]
+
+        response = self.client.search(index=",".join(index_list), body=search_body)
+
         return {
             'hits': response['hits']['hits'],
             'total': response['hits']['total']['value'],
@@ -49,6 +54,7 @@ class ElasticModel:
             'size': size,
             'total_pages': (response['hits']['total']['value'] + size - 1) // size
         }
+
     
     def get_single_data(self, id , index = None):
         try :

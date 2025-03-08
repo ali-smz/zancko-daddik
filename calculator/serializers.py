@@ -15,8 +15,8 @@ class ProfitCalculatorSerializer(serializers.Serializer):
     cif_value = serializers.IntegerField(required=False, default=0)
     other_comps = serializers.IntegerField(required=False, default=0)
 
-    raw_material_import_value = serializers.IntegerField(required=False, default=0)  # واردات مواد اولیه
-    equipment_import_value = serializers.IntegerField(required=False, default=0)  # واردات تجهیزات
+    raw_material_import_value = serializers.IntegerField(required=False, default=0) 
+    equipment_import_value = serializers.IntegerField(required=False, default=0)
     delay_months = serializers.IntegerField(required=False, default=0)
     base_penalty = serializers.IntegerField(required=False, default=0)
     customs_value = serializers.IntegerField(required=False, default=0)
@@ -66,7 +66,7 @@ class ProfitCalculatorSerializer(serializers.Serializer):
     construction_sale_value = serializers.IntegerField(required=False, default=0)
     inheritance_value = serializers.IntegerField(required=False, default=0)  
     heir_share_percentage = serializers.IntegerField(required=False, default=0)
-    contractor_income = serializers.IntegerField(required=False, default=0)  # درآمد قرارداد پیمانکاری
+    contractor_income = serializers.IntegerField(required=False, default=0)
     declaration_missing_days = serializers.IntegerField(required=False, default=0)
     tax_payment_delay_days = serializers.IntegerField(required=False, default=0)
     rural_insurance_exemption = serializers.BooleanField(required=False, default=False)
