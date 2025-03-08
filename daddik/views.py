@@ -20,7 +20,6 @@ class CreateUserView(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
 
-        # Retrieve tokens from the serializer's context
         tokens = serializer.context.get('tokens')
 
         # Build the response
@@ -137,26 +136,22 @@ class ChangeSubscriptionPlanView(APIView):
         user = request.user
         plan_name = request.data.get('plan')
 
-        # Fetch the new plan from the request
         try:
             plan = SubscriptionPlan.objects.get(name=plan_name)
         except SubscriptionPlan.DoesNotExist:
             return Response({'error': 'Invalid plan name'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Get the user's most recent subscription
         user_subscription = UserSubscription.objects.filter(user=user).order_by('-end_date').first()
 
         if not user_subscription:
             return Response({'error': 'No active subscription found'}, status=status.HTTP_400_BAD_REQUEST)
 
-        old_plan = user_subscription.plan  # Save the current plan before updating
+        old_plan = user_subscription.plan 
 
-        # Update the user's subscription with the new plan and new end date
         user_subscription.plan = plan
         user_subscription.end_date = now() + plan.duration
         user_subscription.save()
 
-        # Create a SubscriptionHistory record to log the change
         transaction_reference = get_random_string(length=16)  # Generate a unique reference for the transaction
         SubscriptionHistory.objects.create(
             user=user,

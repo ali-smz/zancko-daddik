@@ -38,6 +38,7 @@ class UserSerializer(serializers.ModelSerializer):
                 'plan': subscription.plan.name,
                 'start_date': subscription.start_date,
                 'end_date': subscription.end_date,
+                'organ' : subscription.organ,
                 'is_active': subscription.is_active()
             }
         return None
@@ -88,6 +89,7 @@ class UserSerializer(serializers.ModelSerializer):
         user_subscription = UserSubscription.objects.create(
             user=user,
             plan=default_plan,
+            organ = 'all',
             start_date=now(),
             end_date=now() + default_plan.duration
         )
