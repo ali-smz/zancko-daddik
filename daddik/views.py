@@ -135,7 +135,7 @@ class ChangeSubscriptionPlanView(APIView):
     def post(self, request):
         user = request.user
         plan_name = request.data.get('plan')
-        organ = request.data.get('organ') if request.data.get('organ') else "all"
+        organ = request.data.get('organ' , "all")
 
         try:
             plan = SubscriptionPlan.objects.get(name=plan_name)

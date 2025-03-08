@@ -9,3 +9,16 @@ class SearchTermHistory(models.Model):
 
     def __str__(self):
         return f"{self.user.username} searched for '{self.search_term}' on {self.search_date}"
+
+
+class Bookmark(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="bookmarks")
+    record_id = models.CharField(max_length=255)
+    index = models.CharField(max_length=255) 
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'record_id', 'index')
+
+    def __str__(self):
+        return f"{self.user.username} - {self.record_id}"

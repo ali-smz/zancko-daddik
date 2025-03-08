@@ -1,7 +1,7 @@
 from django.http import JsonResponse
 from .elasticsearch import ElasticModel
 from django.conf import settings
-from .models import SearchTermHistory
+from .models import SearchTermHistory , Bookmark
 from django.utils.timezone import now
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -92,3 +92,53 @@ class SearchHistoryView(APIView):
         ]
 
         return Response({'history': history_data}, status=status.HTTP_200_OK)
+    
+
+class BookmarkView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        index = request.data.get('index')
+        record_id = request.data.get('record_id')
+
+        if not record_id or not index:
+            return JsonResponse({"error": "Missing record_id or index"}, status=400)
+
+        bookmark, created = Bookmark.objects.get_or_create(user=user, index=index, record_id=record_id)
+
+        if created:
+            return JsonResponse({"message": "Bookmark created successfully"}, status=201)
+        else:
+            return JsonResponse({"message": "Bookmark already exists"}, status=200)
+        
+    def get(self , request):
+        user = request.user
+        es_model = ElasticModel()
+
+        bookmarks = Bookmark.objects.filter(user=user).values("record_id" , "index")
+
+        res = []
+        for bookmark in bookmarks :
+            record = es_model.get_single_data(bookmark['record_id'] , bookmark['index'])
+            if record :
+                res.append(record)
+        
+        return JsonResponse(res , status=200 , safe=False)
+    
+    def delete(self, request):
+        user = request.user
+        index = request.data.get('index')
+        record_id = request.data.get('record_id')
+
+        if not record_id or not index:
+            return JsonResponse({"error": "Missing record_id or index"}, status=400)
+
+        try:
+            bookmark = Bookmark.objects.get(user=user, record_id=record_id, index=index)
+            bookmark.delete()
+            return JsonResponse({"message": "Bookmark removed successfully"}, status=200)
+        except Bookmark.DoesNotExist:
+            return JsonResponse({"error": "Bookmark not found"}, status=404)
+
+
