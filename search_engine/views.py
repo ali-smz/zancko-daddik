@@ -1,7 +1,7 @@
 from django.http import JsonResponse
 from .elasticsearch import ElasticModel
 from django.conf import settings
-from .models import SearchTermHistory , Bookmark
+from .models import SearchTermHistory , Bookmark , Comment
 from django.utils.timezone import now
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -142,3 +142,58 @@ class BookmarkView(APIView):
             return JsonResponse({"error": "Bookmark not found"}, status=404)
 
 
+
+class CommentView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+    
+        user = request.user
+        record_id = request.data.get("record_id")
+        index = request.data.get("index") 
+        body = request.data.get("body")
+        rating = request.data.get("rating")
+
+        if not record_id or not body or not index:
+            return Response({"error": "Missing record_id or body or index"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if rating:
+            try:
+                rating = int(rating)
+                if rating < 1 or rating > 5:
+                    return Response({"error": "Rating must be between 1 and 5"}, status=status.HTTP_400_BAD_REQUEST)
+            except ValueError:
+                return Response({"error": "Invalid rating value"}, status=status.HTTP_400_BAD_REQUEST)
+
+        comment = Comment.objects.create(
+            user=user, record_id=record_id, index=index, body=body, rating=rating or 0
+        )
+
+        return Response({"message": "Comment added successfully"}, status=status.HTTP_201_CREATED)
+
+    def get(self, request):
+    
+        record_id = request.GET.get("record_id")
+        index = request.GET.get("index")
+
+        if not record_id or not index:
+            return Response({"error": "Missing record_id or index"}, status=status.HTTP_400_BAD_REQUEST)
+
+        comments = Comment.objects.filter(record_id=record_id, index=index).values(
+            "id" ,"user__username", "body", "rating", "created_at"
+        )
+
+        return Response(list(comments), status=status.HTTP_200_OK)
+
+    def delete(self, request):
+        user = request.user
+        comment_id = request.data.get("comment_id")
+        if not comment_id:
+            return Response({"error": "Missing comment_id"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            comment = Comment.objects.get(id=comment_id, user=user) 
+            comment.delete()
+            return Response({"message": "Comment deleted successfully"}, status=status.HTTP_200_OK)
+        except Comment.DoesNotExist:
+            return Response({"error": "Comment not found or unauthorized"}, status=status.HTTP_404_NOT_FOUND)

@@ -22,3 +22,18 @@ class Bookmark(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.record_id}"
+    
+
+class Comment(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="comments")
+    record_id = models.CharField(max_length=255)
+    index = models.CharField(max_length=255)
+    body = models.TextField()
+    rating = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Comment by {self.user.username} on {self.record_id}"
