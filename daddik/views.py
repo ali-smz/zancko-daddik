@@ -135,6 +135,7 @@ class ChangeSubscriptionPlanView(APIView):
     def post(self, request):
         user = request.user
         plan_name = request.data.get('plan')
+        organ = request.data.get('organ') if request.data.get('organ') else "all"
 
         try:
             plan = SubscriptionPlan.objects.get(name=plan_name)
@@ -150,6 +151,7 @@ class ChangeSubscriptionPlanView(APIView):
 
         user_subscription.plan = plan
         user_subscription.end_date = now() + plan.duration
+        user_subscription.organ = organ
         user_subscription.save()
 
         transaction_reference = get_random_string(length=16)  # Generate a unique reference for the transaction
@@ -163,6 +165,7 @@ class ChangeSubscriptionPlanView(APIView):
         return Response({
             'message': f'Successfully changed to {plan.name.capitalize()} plan',
             'plan': plan.name,
+            'organ' : user_subscription.organ ,
             'end_date': user_subscription.end_date
         }, status=status.HTTP_200_OK)
 
