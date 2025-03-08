@@ -5,7 +5,7 @@ from django.utils.timezone import now
 from rest_framework.permissions import AllowAny , IsAuthenticated
 from rest_framework import generics
 from rest_framework.views import APIView
-from .serializers import UserSerializer , AllUsers , TaskSerializer , MessageSerializer
+from .serializers import UserSerializer  , TaskSerializer , MessageSerializer
 from datetime import timedelta
 from django.utils.crypto import get_random_string           
 # Create your views here.
@@ -73,11 +73,6 @@ class UpdateUserView(generics.UpdateAPIView):
 
         for task in task_to_add:
             Task.objects.create(user=user , **task)
-
-
-class UserListView(viewsets.ModelViewSet):
-    queryset = User.objects.all() 
-    serializer_class = AllUsers
 
 class SendMessageView(generics.CreateAPIView):
     queryset = Message.objects.all()

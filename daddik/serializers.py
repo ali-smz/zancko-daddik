@@ -13,28 +13,6 @@ class MessageSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class AllUsers(serializers.ModelSerializer):
-    messages = MessageSerializer(many=True, read_only=True)
-    subscription = serializers.SerializerMethodField() 
-    task_count = serializers.SerializerMethodField()
-    class Meta:
-        model = User
-        fields = '__all__'  
-    
-    def get_subscription(self, instance):
-        if hasattr(instance, 'subscription'):
-            return {
-                'plan': instance.subscription.plan.name,
-                'start_date': instance.subscription.start_date,
-                'end_date': instance.subscription.end_date,
-                'is_active': instance.subscription.is_active()
-            }
-        return None
-    
-    def get_task_count(self , instance) : 
-        return instance.tasks.filter(completed=False).count()
-
-
 class UserSerializer(serializers.ModelSerializer):
     referral_code = serializers.ReadOnlyField()
     referred_by_code = serializers.CharField(write_only=True, required=False)
