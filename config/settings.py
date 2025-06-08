@@ -153,7 +153,7 @@ REST_FRAMEWORK = {
 
 ELASTICSEARCH_DSL = {
     'default': {
-        'hosts': 'http://elastic:iwfuHp7dCr5r8cCHtNAGWxjE@el-capitan.liara.cloud:33332/'
+        'hosts': os.getenv('ELASTICSEARCH_URI')
     },
 }
 
